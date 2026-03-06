@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
@@ -11,6 +11,12 @@ type Movie = {
   format: string
   imprint: string | null
   director: string | null
+}
+
+type TMDBResult = {
+  id: number
+  title: string
+  release_date: string
 }
 
 export default function MovieLibrary() {
@@ -27,6 +33,9 @@ export default function MovieLibrary() {
   const [userEmail, setUserEmail] = useState('')
   const [editMovie, setEditMovie] = useState<Movie | null>(null)
   const [editData, setEditData] = useState<Partial<Movie>>({})
+  const [tmdbResults, setTmdbResults] = useState<TMDBResult[]>([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function fetchMovies() {
     const { data: authData } = await supabase.auth.getUser()
@@ -46,6 +55,55 @@ export default function MovieLibrary() {
   useEffect(() => {
     fetchMovies()
   }, [])
+
+  async function searchTMDB(query: string) {
+    if (query.length < 3) {
+      setTmdbResults([])
+      setShowDropdown(false)
+      return
+    }
+
+    const res = await fetch(
+      `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=1`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+
+    const data = await res.json()
+    setTmdbResults(data.results?.slice(0, 6) || [])
+    setShowDropdown(true)
+  }
+
+  function handleTitleChange(value: string) {
+    setTitle(value)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    searchTimeout.current = setTimeout(() => searchTMDB(value), 300)
+  }
+
+  async function handleSelectTMDB(result: TMDBResult) {
+    setTitle(result.title)
+    setYear(result.release_date ? result.release_date.split('-')[0] : '')
+    setShowDropdown(false)
+    setTmdbResults([])
+
+    // Fetch director from TMDB credits
+    const res = await fetch(
+      `https://api.themoviedb.org/3/movie/${result.id}/credits`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    const data = await res.json()
+    const directorCredit = data.crew?.find((c: { job: string; name: string }) => c.job === 'Director')
+    if (directorCredit) setDirector(directorCredit.name)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -200,14 +258,57 @@ export default function MovieLibrary() {
         }}>Add to your library</h2>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-            <input
-              type="text"
-              placeholder="Title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              style={{ ...inputStyle, flex: '3', minWidth: '160px', width: 'auto' }}
-            />
+
+            {/* Title with TMDB dropdown */}
+            <div style={{ flex: '3', minWidth: '160px', position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Title"
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                required
+                style={{ ...inputStyle, width: '100%' }}
+              />
+              {showDropdown && tmdbResults.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: 'white',
+                  border: '1px solid var(--powder-blue)',
+                  borderTop: 'none',
+                  borderRadius: '0 0 4px 4px',
+                  zIndex: 100,
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                }}>
+                  {tmdbResults.map((result) => (
+                    <div
+                      key={result.id}
+                      onMouseDown={() => handleSelectTMDB(result)}
+                      style={{
+                        padding: '0.5rem 0.75rem',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid var(--powder-blue)',
+                        fontSize: '0.875rem',
+                        color: 'var(--navy)'
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+                    >
+                      <span style={{ fontWeight: 'bold' }}>{result.title}</span>
+                      {result.release_date && (
+                        <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem' }}>
+                          ({result.release_date.split('-')[0]})
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <input
               type="text"
               placeholder="Director"
