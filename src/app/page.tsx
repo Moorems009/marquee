@@ -1,28 +1,28 @@
-import { supabase } from '@/lib/supabase'
-import AddMovieForm from '@/components/AddMovieForm'
+'use client'
 
-export default async function Home() {
-  const { data: movies, error } = await supabase
-    .from('movies')
-    .select('*')
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
+import MovieLibrary from '@/components/MovieLibrary'
 
-  if (error) {
-    return <div>Error: {error.message}</div>
-  }
+export default function Home() {
+  const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function checkUser() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/auth')
+      }
+    }
+    checkUser()
+  }, [])
 
   return (
     <main>
       <h1>Marquee</h1>
-      <AddMovieForm />
-      {movies.length === 0 ? (
-        <p>No movies yet. Add some!</p>
-      ) : (
-        <ul>
-          {movies.map((movie) => (
-            <li key={movie.id}>{movie.title} ({movie.year}) — {movie.format}</li>
-          ))}
-        </ul>
-      )}
+      <MovieLibrary />
     </main>
   )
 }
