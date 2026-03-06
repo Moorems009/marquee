@@ -11,12 +11,14 @@ type Movie = {
   format: string
   imprint: string | null
   director: string | null
+  poster_url: string | null
 }
 
 type TMDBResult = {
   id: number
   title: string
   release_date: string
+  poster_path: string | null
 }
 
 export default function MovieLibrary() {
@@ -29,12 +31,14 @@ export default function MovieLibrary() {
   const [format, setFormat] = useState('Blu-ray')
   const [imprint, setImprint] = useState('')
   const [director, setDirector] = useState('')
+  const [posterUrl, setPosterUrl] = useState('')
   const [message, setMessage] = useState('')
   const [userEmail, setUserEmail] = useState('')
   const [editMovie, setEditMovie] = useState<Movie | null>(null)
   const [editData, setEditData] = useState<Partial<Movie>>({})
   const [tmdbResults, setTmdbResults] = useState<TMDBResult[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function fetchMovies() {
@@ -90,7 +94,10 @@ export default function MovieLibrary() {
     setShowDropdown(false)
     setTmdbResults([])
 
-    // Fetch director from TMDB credits
+    if (result.poster_path) {
+      setPosterUrl(`https://image.tmdb.org/t/p/w500${result.poster_path}`)
+    }
+
     const res = await fetch(
       `https://api.themoviedb.org/3/movie/${result.id}/credits`,
       {
@@ -103,6 +110,8 @@ export default function MovieLibrary() {
     const data = await res.json()
     const directorCredit = data.crew?.find((c: { job: string; name: string }) => c.job === 'Director')
     if (directorCredit) setDirector(directorCredit.name)
+
+   
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -114,7 +123,7 @@ export default function MovieLibrary() {
 
     const { error } = await supabase
       .from('movies')
-      .insert([{ title, year: parseInt(year), format, imprint, director, user_id: user?.id }])
+      .insert([{ title, year: parseInt(year), format, imprint, director, poster_url: posterUrl || null, user_id: user?.id }])
 
     if (error) {
       setMessage(`Error: ${error.message}`)
@@ -125,6 +134,7 @@ export default function MovieLibrary() {
       setFormat('Blu-ray')
       setImprint('')
       setDirector('')
+      setPosterUrl('')
       fetchMovies()
     }
   }
@@ -150,6 +160,7 @@ export default function MovieLibrary() {
         format: editData.format,
         director: editData.director,
         imprint: editData.imprint,
+        poster_url: editData.poster_url,
       })
       .eq('id', editMovie.id)
 
@@ -203,7 +214,7 @@ export default function MovieLibrary() {
   }
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
+    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
 
       {/* Header */}
       <div style={{
@@ -258,8 +269,6 @@ export default function MovieLibrary() {
         }}>Add to your library</h2>
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-
-            {/* Title with TMDB dropdown */}
             <div style={{ flex: '3', minWidth: '160px', position: 'relative' }}>
               <input
                 type="text"
@@ -292,23 +301,34 @@ export default function MovieLibrary() {
                         cursor: 'pointer',
                         borderBottom: '1px solid var(--powder-blue)',
                         fontSize: '0.875rem',
-                        color: 'var(--navy)'
+                        color: 'var(--navy)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem'
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
                     >
-                      <span style={{ fontWeight: 'bold' }}>{result.title}</span>
-                      {result.release_date && (
-                        <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem' }}>
-                          ({result.release_date.split('-')[0]})
-                        </span>
+                      {result.poster_path && (
+                        <img
+                          src={`https://image.tmdb.org/t/p/w92${result.poster_path}`}
+                          alt={result.title}
+                          style={{ width: '32px', height: '48px', objectFit: 'cover', borderRadius: '2px' }}
+                        />
                       )}
+                      <div>
+                        <span style={{ fontWeight: 'bold' }}>{result.title}</span>
+                        {result.release_date && (
+                          <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem' }}>
+                            ({result.release_date.split('-')[0]})
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
             <input
               type="text"
               placeholder="Director"
@@ -369,35 +389,83 @@ export default function MovieLibrary() {
         )}
       </div>
 
-      {/* Movie List */}
-      <div>
+      {/* Library Header with View Toggle */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '1rem'
+      }}>
         <h2 style={{
           fontSize: '1.1rem',
           color: 'var(--dusty-rose)',
           textTransform: 'uppercase',
           letterSpacing: '0.1em',
-          marginBottom: '1rem'
+          margin: 0
         }}>My Library</h2>
-        {loading ? (
-          <p style={{ color: 'var(--warm-gray)' }}>Loading...</p>
-        ) : movies.length === 0 ? (
-          <p style={{ color: 'var(--warm-gray)', fontStyle: 'italic' }}>No movies yet. Add some!</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {movies.map((movie) => (
-              <div
-                key={movie.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '0.75rem 1rem',
-                  backgroundColor: 'white',
-                  border: '1px solid var(--powder-blue)',
-                  borderRadius: '4px',
-                  borderLeft: '4px solid var(--blush)'
-                }}
-              >
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={() => setViewMode('list')}
+            style={{
+              backgroundColor: viewMode === 'list' ? 'var(--powder-blue)' : 'white',
+              color: 'var(--navy)',
+              border: '1px solid var(--powder-blue)',
+              padding: '0.3rem 0.75rem',
+              cursor: 'pointer',
+              fontFamily: 'Georgia, serif',
+              borderRadius: '2px',
+              fontSize: '0.8rem'
+            }}
+          >
+            ☰ List
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            style={{
+              backgroundColor: viewMode === 'grid' ? 'var(--powder-blue)' : 'white',
+              color: 'var(--navy)',
+              border: '1px solid var(--powder-blue)',
+              padding: '0.3rem 0.75rem',
+              cursor: 'pointer',
+              fontFamily: 'Georgia, serif',
+              borderRadius: '2px',
+              fontSize: '0.8rem'
+            }}
+          >
+            ⊞ Grid
+          </button>
+        </div>
+      </div>
+
+      {/* Movie List / Grid */}
+      {loading ? (
+        <p style={{ color: 'var(--warm-gray)' }}>Loading...</p>
+      ) : movies.length === 0 ? (
+        <p style={{ color: 'var(--warm-gray)', fontStyle: 'italic' }}>No movies yet. Add some!</p>
+      ) : viewMode === 'list' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {movies.map((movie) => (
+            <div
+              key={movie.id}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.75rem 1rem',
+                backgroundColor: 'white',
+                border: '1px solid var(--powder-blue)',
+                borderRadius: '4px',
+                borderLeft: '4px solid var(--blush)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {movie.poster_url && (
+                  <img
+                    src={movie.poster_url}
+                    alt={movie.title}
+                    style={{ width: '32px', height: '48px', objectFit: 'cover', borderRadius: '2px' }}
+                  />
+                )}
                 <div>
                   <span style={{ fontWeight: 'bold', color: 'var(--navy)' }}>{movie.title}</span>
                   <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem', fontSize: '0.875rem' }}>
@@ -414,40 +482,102 @@ export default function MovieLibrary() {
                     </span>
                   )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{
-                    fontSize: '0.75rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    color: 'white',
-                    backgroundColor: 'var(--mint)',
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{
+                  fontSize: '0.75rem',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: 'white',
+                  backgroundColor: 'var(--mint)',
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '2px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {movie.format}
+                </span>
+                <button
+                  onClick={() => openEdit(movie)}
+                  style={{
+                    background: 'none',
+                    border: '1px solid var(--powder-blue)',
+                    color: 'var(--warm-gray)',
                     padding: '0.2rem 0.6rem',
+                    cursor: 'pointer',
+                    fontFamily: 'Georgia, serif',
                     borderRadius: '2px',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {movie.format}
+                    fontSize: '0.75rem'
+                  }}
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+          gap: '1rem'
+        }}>
+          {movies.map((movie) => (
+            <div
+              key={movie.id}
+              onClick={() => openEdit(movie)}
+              style={{
+                cursor: 'pointer',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                border: '1px solid var(--powder-blue)',
+                backgroundColor: 'white',
+                transition: 'transform 0.1s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.03)')}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+            >
+              {movie.poster_url ? (
+                <img
+                  src={movie.poster_url}
+                  alt={movie.title}
+                  style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
+                />
+              ) : (
+                <div style={{
+                  width: '100%',
+                  aspectRatio: '2/3',
+                  backgroundColor: 'var(--cream)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0.5rem',
+                  textAlign: 'center'
+                }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--warm-gray)', fontStyle: 'italic' }}>
+                    {movie.title}
                   </span>
-                  <button
-                    onClick={() => openEdit(movie)}
-                    style={{
-                      background: 'none',
-                      border: '1px solid var(--powder-blue)',
-                      color: 'var(--warm-gray)',
-                      padding: '0.2rem 0.6rem',
-                      cursor: 'pointer',
-                      fontFamily: 'Georgia, serif',
-                      borderRadius: '2px',
-                      fontSize: '0.75rem'
-                    }}
-                  >
-                    Edit
-                  </button>
+                </div>
+              )}
+              <div style={{ padding: '0.5rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--navy)', marginBottom: '0.2rem' }}>
+                  {movie.title}
+                </div>
+                <div style={{
+                  fontSize: '0.65rem',
+                  textTransform: 'uppercase',
+                  color: 'white',
+                  backgroundColor: 'var(--mint)',
+                  padding: '0.1rem 0.4rem',
+                  borderRadius: '2px',
+                  display: 'inline-block'
+                }}>
+                  {movie.format}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editMovie && (
@@ -486,57 +616,66 @@ export default function MovieLibrary() {
               letterSpacing: '0.1em'
             }}>Edit Movie</h2>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={labelStyle}>Title</label>
-                <input
-                  type="text"
-                  value={editData.title || ''}
-                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                  style={inputStyle}
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              {editData.poster_url && (
+                <img
+                  src={editData.poster_url}
+                  alt={editData.title}
+                  style={{ width: '80px', height: '120px', objectFit: 'cover', borderRadius: '2px', flexShrink: 0 }}
                 />
-              </div>
-              <div>
-                <label style={labelStyle}>Director</label>
-                <input
-                  type="text"
-                  value={editData.director || ''}
-                  onChange={(e) => setEditData({ ...editData, director: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Year</label>
-                <input
-                  type="number"
-                  value={editData.year || ''}
-                  onChange={(e) => setEditData({ ...editData, year: parseInt(e.target.value) })}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Format</label>
-                <select
-                  value={editData.format || 'Blu-ray'}
-                  onChange={(e) => setEditData({ ...editData, format: e.target.value })}
-                  style={inputStyle}
-                >
-                  <option>Blu-ray</option>
-                  <option>4K UHD</option>
-                  <option>4K</option>
-                  <option>DVD</option>
-                  <option>VHS</option>
-                  <option>Digital</option>
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>Imprint</label>
-                <input
-                  type="text"
-                  value={editData.imprint || ''}
-                  onChange={(e) => setEditData({ ...editData, imprint: e.target.value })}
-                  style={inputStyle}
-                />
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+                <div>
+                  <label style={labelStyle}>Title</label>
+                  <input
+                    type="text"
+                    value={editData.title || ''}
+                    onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Director</label>
+                  <input
+                    type="text"
+                    value={editData.director || ''}
+                    onChange={(e) => setEditData({ ...editData, director: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Year</label>
+                  <input
+                    type="number"
+                    value={editData.year || ''}
+                    onChange={(e) => setEditData({ ...editData, year: parseInt(e.target.value) })}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Format</label>
+                  <select
+                    value={editData.format || 'Blu-ray'}
+                    onChange={(e) => setEditData({ ...editData, format: e.target.value })}
+                    style={inputStyle}
+                  >
+                    <option>Blu-ray</option>
+                    <option>4K UHD</option>
+                    <option>4K</option>
+                    <option>DVD</option>
+                    <option>VHS</option>
+                    <option>Digital</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Imprint</label>
+                  <input
+                    type="text"
+                    value={editData.imprint || ''}
+                    onChange={(e) => setEditData({ ...editData, imprint: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
               </div>
             </div>
 
