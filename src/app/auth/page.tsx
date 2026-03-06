@@ -14,28 +14,29 @@ export default function AuthPage() {
   const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setMessage('')
+  e.preventDefault()
+  setLoading(true)
+  setMessage('')
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password })
-      if (error) {
-        setMessage(`Error: ${error.message}`)
-      } else {
-        setMessage('Check your email to confirm your account!')
-      }
+  if (isSignUp) {
+    const { error } = await supabase.auth.signUp({ email, password })
+    if (error) {
+      setMessage(`Error: ${error.message}`)
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) {
-        setMessage(`Error: ${error.message}`)
-      } else {
-        router.push('/')
-      }
+      setMessage('Check your email to confirm your account!')
     }
-
-    setLoading(false)
+  } else {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setMessage(`Error: ${error.message}`)
+    } else {
+      console.log('Success, navigating...')
+      window.location.href = '/'
+    }
   }
+
+  setLoading(false)
+}
 
   return (
     <main>

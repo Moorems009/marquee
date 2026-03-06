@@ -12,6 +12,7 @@ export default function Home() {
   useEffect(() => {
     async function checkUser() {
       const { data: { session } } = await supabase.auth.getSession()
+      console.log('Session:', session)
       if (!session) {
         router.push('/auth')
       }
