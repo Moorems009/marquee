@@ -11,6 +11,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+## [0.5.0] - 2026-03-07
+
+### feat
+- Add `src/middleware.ts` to check session server-side on every request; unauthenticated users are redirected to `/auth` before the page renders
+- Replace one-time session check in `page.tsx` with `onAuthStateChange` listener so an expired session redirects to `/auth` automatically while the page is open
+
+---
+
 ## [0.4.1] - 2026-03-07
 
 ### chore

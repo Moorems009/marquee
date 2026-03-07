@@ -10,14 +10,13 @@ export default function Home() {
   const supabase = createClient()
 
   useEffect(() => {
-    async function checkUser() {
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log('Session:', session)
-      if (!session) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
         router.push('/auth')
       }
-    }
-    checkUser()
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   return (
