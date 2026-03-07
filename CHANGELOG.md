@@ -11,6 +11,13 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+## [0.5.1] - 2026-03-07
+
+### chore
+- Rename src/middleware.ts to src/proxy.ts and export function middleware to export function proxy per Next.js 16 deprecation
+
+---
+
 ## [0.5.0] - 2026-03-07
 
 ### feat
