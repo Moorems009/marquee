@@ -11,6 +11,17 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+## [0.4.0] - 2026-03-07
+
+### feat
+- Proxy all TMDB API calls through a server-side Next.js route (`/api/tmdb`) so the token is never exposed to the client
+- API route requires an authenticated Supabase session before forwarding requests
+
+### chore
+- Rename env var from `NEXT_PUBLIC_TMDB_TOKEN` to `TMDB_TOKEN` in `.env.local`
+
+---
+
 ## [0.3.0] - 2026-03-07
 
 ### feat
