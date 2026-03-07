@@ -22,7 +22,6 @@ export default function Home() {
 
   return (
     <main>
-      <h1>Marquee</h1>
       <MovieLibrary />
     </main>
   )

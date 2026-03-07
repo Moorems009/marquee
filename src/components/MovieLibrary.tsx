@@ -9,6 +9,7 @@ import { Movie, Label } from '@/lib/types'
 import AddMovieForm from './AddMovieForm'
 import MovieList from './MovieList'
 import EditMovieModal from './EditMovieModal'
+import ImportCSVModal from './ImportCSVModal'
 
 export default function MovieLibrary() {
   const supabase = createClient()
@@ -20,6 +21,8 @@ export default function MovieLibrary() {
   const [editMovie, setEditMovie] = useState<Movie | null>(null)
   const [editData, setEditData] = useState<Partial<Movie>>({})
   const [editMovieLabels, setEditMovieLabels] = useState<Label[]>([])
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -84,33 +87,100 @@ export default function MovieLibrary() {
         alignItems: 'center',
         borderBottom: '2px solid var(--powder-blue)',
         paddingBottom: '1rem',
-        marginBottom: '2rem'
+        marginBottom: '2rem',
+        position: 'relative'
       }}>
-        <div>
-          <h1 style={{
-            fontSize: '2.5rem',
-            fontStyle: 'italic',
-            color: 'var(--navy)',
-            margin: 0
-          }}>Marquee</h1>
-          <p style={{ color: 'var(--warm-gray)', margin: '0.25rem 0 0 0', fontSize: '0.875rem' }}>
-            {userEmail}
-          </p>
+        <h1 style={{
+          fontSize: '2.5rem',
+          fontStyle: 'italic',
+          color: 'var(--navy)',
+          margin: 0
+        }}>Marquee</h1>
+
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowSettingsMenu((prev) => !prev)}
+            style={{
+              background: 'none',
+              border: '1px solid var(--powder-blue)',
+              color: 'var(--navy)',
+              padding: '0.4rem 0.75rem',
+              cursor: 'pointer',
+              fontFamily: 'Georgia, serif',
+              borderRadius: '2px',
+              fontSize: '1.1rem',
+              lineHeight: 1
+            }}
+          >
+            ⚙
+          </button>
+
+          {showSettingsMenu && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 0.5rem)',
+                right: 0,
+                backgroundColor: 'white',
+                border: '1px solid var(--powder-blue)',
+                borderRadius: '4px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                zIndex: 200,
+                minWidth: '180px',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{
+                padding: '0.6rem 1rem',
+                borderBottom: '1px solid var(--powder-blue)',
+                fontSize: '0.75rem',
+                color: 'var(--warm-gray)',
+                fontStyle: 'italic'
+              }}>
+                {userEmail}
+              </div>
+              <button
+                onClick={() => { setShowSettingsMenu(false); setShowImportModal(true) }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: '1px solid var(--powder-blue)',
+                  padding: '0.6rem 1rem',
+                  cursor: 'pointer',
+                  fontFamily: 'Georgia, serif',
+                  fontSize: '0.875rem',
+                  color: 'var(--navy)'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+              >
+                Import CSV
+              </button>
+              <button
+                onClick={handleSignOut}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  padding: '0.6rem 1rem',
+                  cursor: 'pointer',
+                  fontFamily: 'Georgia, serif',
+                  fontSize: '0.875rem',
+                  color: 'var(--dusty-rose)'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
-        <button
-          onClick={handleSignOut}
-          style={{
-            background: 'none',
-            border: '1px solid var(--warm-gray)',
-            color: 'var(--warm-gray)',
-            padding: '0.4rem 1rem',
-            cursor: 'pointer',
-            fontFamily: 'Georgia, serif',
-            borderRadius: '2px'
-          }}
-        >
-          Sign Out
-        </button>
       </div>
 
       <AddMovieForm onMovieAdded={fetchMovies} />
@@ -144,6 +214,16 @@ export default function MovieLibrary() {
           setEditData={setEditData}
         />
       )}
-    </div>
+    {showImportModal && (
+  <ImportCSVModal
+    existingMovies={movies}
+    onClose={() => setShowImportModal(false)}
+    onImportComplete={() => {
+      fetchMovies()
+      fetchMovieLabels()
+      setShowImportModal(false)
+    }}
+  />
+)}</div>
   )
 }
