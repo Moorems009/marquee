@@ -11,6 +11,7 @@ import MovieList from './MovieList'
 import EditMovieModal from './EditMovieModal'
 import ImportCSVModal from './ImportCSVModal'
 import SettingsModal from './SettingsModal'
+import ErrorBoundary from './ErrorBoundary'
 
 export default function MovieLibrary() {
   const supabase = createClient()
@@ -207,54 +208,65 @@ export default function MovieLibrary() {
         </div>
       </div>
 
-      <AddMovieForm onMovieAdded={fetchMovies} />
+      <ErrorBoundary>
+        <AddMovieForm onMovieAdded={fetchMovies} />
+      </ErrorBoundary>
 
-      <MovieList
-        movies={movies}
-        loading={loading}
-        viewMode={viewMode}
-        movieLabels={movieLabels}
-        onEdit={openEdit}
-        onViewModeChange={setViewMode}
-      />
+      <ErrorBoundary>
+        <MovieList
+          movies={movies}
+          loading={loading}
+          viewMode={viewMode}
+          movieLabels={movieLabels}
+          onEdit={openEdit}
+          onViewModeChange={setViewMode}
+        />
+      </ErrorBoundary>
 
       {editMovie && (
-        <EditMovieModal
-          movie={editMovie}
-          editData={editData}
-          editMovieLabels={editMovieLabels}
-          labels={labels}
-          onClose={closeEdit}
-          onSave={handleSave}
-          onDelete={handleDelete}
-          onSelectExistingLabel={async (label) => {
-            await addLabelToMovie(editMovie.id, label.id)
-            setEditMovieLabels([...editMovieLabels, label])
-          }}
-          onRemoveLabel={async (label) => {
-            await removeLabelFromMovie(editMovie.id, label.id)
-            setEditMovieLabels(editMovieLabels.filter((l) => l.id !== label.id))
-          }}
-          setEditData={setEditData}
-        />
+        <ErrorBoundary onReset={closeEdit}>
+          <EditMovieModal
+            movie={editMovie}
+            editData={editData}
+            editMovieLabels={editMovieLabels}
+            labels={labels}
+            onClose={closeEdit}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            onSelectExistingLabel={async (label) => {
+              await addLabelToMovie(editMovie.id, label.id)
+              setEditMovieLabels([...editMovieLabels, label])
+            }}
+            onRemoveLabel={async (label) => {
+              await removeLabelFromMovie(editMovie.id, label.id)
+              setEditMovieLabels(editMovieLabels.filter((l) => l.id !== label.id))
+            }}
+            setEditData={setEditData}
+          />
+        </ErrorBoundary>
       )}
-    {showSettingsModal && (
-      <SettingsModal
-        currentSettings={{ defaultView: viewMode }}
-        onClose={() => setShowSettingsModal(false)}
-        onSave={(settings) => setViewMode(settings.defaultView)}
-      />
-    )}
-    {showImportModal && (
-  <ImportCSVModal
-    existingMovies={movies}
-    onClose={() => setShowImportModal(false)}
-    onImportComplete={() => {
-      fetchMovies()
-      fetchMovieLabels()
-      setShowImportModal(false)
-    }}
-  />
-)}</div>
+      {showSettingsModal && (
+        <ErrorBoundary onReset={() => setShowSettingsModal(false)}>
+          <SettingsModal
+            currentSettings={{ defaultView: viewMode }}
+            onClose={() => setShowSettingsModal(false)}
+            onSave={(settings) => setViewMode(settings.defaultView)}
+          />
+        </ErrorBoundary>
+      )}
+      {showImportModal && (
+        <ErrorBoundary onReset={() => setShowImportModal(false)}>
+          <ImportCSVModal
+            existingMovies={movies}
+            onClose={() => setShowImportModal(false)}
+            onImportComplete={() => {
+              fetchMovies()
+              fetchMovieLabels()
+              setShowImportModal(false)
+            }}
+          />
+        </ErrorBoundary>
+      )}
+    </div>
   )
 }

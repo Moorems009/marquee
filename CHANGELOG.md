@@ -11,6 +11,15 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+## [0.3.0] - 2026-03-07
+
+### feat
+- Add `ErrorBoundary` class component with a "Try again" fallback UI
+- Wrap `AddMovieForm` and `MovieList` in independent error boundaries so a crash in one section does not affect the other
+- Wrap `EditMovieModal`, `SettingsModal`, and `ImportCSVModal` in error boundaries that dismiss the modal on reset
+
+---
+
 ## [0.2.0] - 2026-03-07
 
 ### feat
