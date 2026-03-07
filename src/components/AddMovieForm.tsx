@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { searchMovies, getMovieCredits, getPosterUrl } from '@/lib/tmdb'
+import { searchMovies, getMovieCredits, getMovieRating, getPosterUrl } from '@/lib/tmdb'
 import { TMDBResult } from '@/lib/types'
 import { inputStyle, sectionHeadingStyle } from '@/lib/styles'
 
@@ -18,6 +18,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
   const [imprint, setImprint] = useState('')
   const [director, setDirector] = useState('')
   const [posterUrl, setPosterUrl] = useState('')
+  const [mpaaRating, setMpaaRating] = useState('')
   const [message, setMessage] = useState('')
   const [tmdbResults, setTmdbResults] = useState<TMDBResult[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
@@ -48,8 +49,12 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
       setPosterUrl(getPosterUrl(result.poster_path))
     }
 
-    const { director: directorName } = await getMovieCredits(result.id)
+    const [{ director: directorName }, { mpaa_rating }] = await Promise.all([
+      getMovieCredits(result.id),
+      getMovieRating(result.id)
+    ])
     if (directorName) setDirector(directorName)
+    if (mpaa_rating) setMpaaRating(mpaa_rating)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -61,7 +66,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
 
     const { error } = await supabase
       .from('movies')
-      .insert([{ title, year: parseInt(year), format, imprint, director, poster_url: posterUrl || null, user_id: user?.id }])
+      .insert([{ title, year: parseInt(year), format, imprint, director, poster_url: posterUrl || null, mpaa_rating: mpaaRating || null, user_id: user?.id }])
 
     if (error) {
       setMessage(`Error: ${error.message}`)
@@ -73,6 +78,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
       setImprint('')
       setDirector('')
       setPosterUrl('')
+      setMpaaRating('')
       onMovieAdded()
     }
   }

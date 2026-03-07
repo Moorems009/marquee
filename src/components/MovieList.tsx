@@ -155,6 +155,19 @@ export default function MovieList({
                     {movie.imprint}
                   </span>
                 )}
+                {movie.mpaa_rating && (
+                  <span style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--navy)',
+                    border: '1px solid var(--warm-gray)',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '2px',
+                    whiteSpace: 'nowrap',
+                    fontFamily: 'Georgia, serif'
+                  }}>
+                    {movie.mpaa_rating}
+                  </span>
+                )}
                 <button
                   onClick={() => onEdit(movie)}
                   style={{
@@ -244,6 +257,20 @@ export default function MovieList({
                     marginLeft: '0.25rem'
                   }}>
                     {movie.imprint}
+                  </div>
+                )}
+                {movie.mpaa_rating && (
+                  <div style={{
+                    fontSize: '0.65rem',
+                    color: 'var(--navy)',
+                    border: '1px solid var(--warm-gray)',
+                    padding: '0.1rem 0.4rem',
+                    borderRadius: '2px',
+                    display: 'inline-block',
+                    marginLeft: '0.25rem',
+                    fontFamily: 'Georgia, serif'
+                  }}>
+                    {movie.mpaa_rating}
                   </div>
                 )}
                 {movieLabels[movie.id]?.length > 0 && (

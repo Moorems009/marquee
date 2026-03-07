@@ -38,5 +38,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ director: director?.name ?? '' })
   }
 
+  if (action === 'rating') {
+    const id = searchParams.get('id') ?? ''
+    const res = await fetch(`${TMDB_BASE}/movie/${id}/release_dates`, { headers })
+    const data = await res.json()
+    const usRelease = data.results?.find((r: { iso_3166_1: string }) => r.iso_3166_1 === 'US')
+    const certification = usRelease?.release_dates?.find(
+      (d: { certification: string }) => d.certification
+    )?.certification ?? ''
+    return NextResponse.json({ mpaa_rating: certification || null })
+  }
+
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
 }

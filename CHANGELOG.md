@@ -11,6 +11,19 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+## [0.7.0] - 2026-03-07
+
+### feat
+- Pull MPAA rating from TMDB `/movie/{id}/release_dates` (US certification) via new `action=rating` handler in the server-side API proxy
+- Add `getMovieRating()` to `src/lib/tmdb.ts`
+- Auto-fill `mpaa_rating` on TMDB selection in Add Movie form and Edit modal
+- Fetch and store `mpaa_rating` during CSV bulk import
+- Display MPAA rating as an outlined badge in list view (between imprint and Edit button) and grid view (below imprint)
+- Add editable MPAA Rating field to Edit modal
+- Add `mpaa_rating text` column to the `movies` table in Supabase
+
+---
+
 ## [0.6.0] - 2026-03-07
 
 ### feat

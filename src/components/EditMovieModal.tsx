@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { Movie, Label, TMDBResult } from '@/lib/types'
 import { inputStyle, fieldLabelStyle } from '@/lib/styles'
-import { searchMovies, getMovieCredits, getPosterUrl } from '@/lib/tmdb'
+import { searchMovies, getMovieCredits, getMovieRating, getPosterUrl } from '@/lib/tmdb'
 
 type Props = {
   movie: Movie
@@ -79,8 +79,12 @@ export default function EditMovieModal({
       poster_url: result.poster_path ? getPosterUrl(result.poster_path) : editData.poster_url
     }
 
-    const { director } = await getMovieCredits(result.id)
+    const [{ director }, { mpaa_rating }] = await Promise.all([
+      getMovieCredits(result.id),
+      getMovieRating(result.id)
+    ])
     if (director) updates.director = director
+    if (mpaa_rating !== undefined) updates.mpaa_rating = mpaa_rating
 
     setEditData(updates)
   }
@@ -233,6 +237,16 @@ export default function EditMovieModal({
                 type="text"
                 value={editData.imprint || ''}
                 onChange={(e) => setEditData({ ...editData, imprint: e.target.value })}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={fieldLabelStyle}>MPAA Rating</label>
+              <input
+                type="text"
+                placeholder="e.g. PG-13, R, NR"
+                value={editData.mpaa_rating || ''}
+                onChange={(e) => setEditData({ ...editData, mpaa_rating: e.target.value || null })}
                 style={inputStyle}
               />
             </div>

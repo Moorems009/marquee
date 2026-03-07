@@ -6,6 +6,7 @@ export type Movie = {
   imprint: string | null
   director: string | null
   poster_url: string | null
+  mpaa_rating: string | null
 }
 
 export type Label = {

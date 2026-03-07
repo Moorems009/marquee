@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { searchMovies, getMovieCredits, getPosterUrl } from '@/lib/tmdb'
+import { searchMovies, getMovieCredits, getMovieRating, getPosterUrl } from '@/lib/tmdb'
 import { Movie } from '@/lib/types'
 import { inputStyle } from '@/lib/styles'
 
@@ -132,6 +132,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     const { row } = importRow
     let director = row.director || ''
     let posterUrl = null
+    let mpaaRating: string | null = null
     const normalizedFormat = row.format ? normalizeFormat(row.format) : null
     const format = normalizedFormat || 'Blu-ray'
 
@@ -144,10 +145,12 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
 
       if (match) {
         if (match.poster_path) posterUrl = getPosterUrl(match.poster_path)
-        if (!director) {
-          const credits = await getMovieCredits(match.id)
-          director = credits.director || ''
-        }
+        const [credits, ratingData] = await Promise.all([
+          !director ? getMovieCredits(match.id) : Promise.resolve({ director: '' }),
+          getMovieRating(match.id)
+        ])
+        if (!director) director = credits.director || ''
+        mpaaRating = ratingData.mpaa_rating || null
       }
     } catch {
       // TMDB failed, continue with what we have
@@ -162,6 +165,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         imprint: row.imprint || null,
         director: director || null,
         poster_url: posterUrl,
+        mpaa_rating: mpaaRating,
         user_id: user.id
       }])
       .select()
