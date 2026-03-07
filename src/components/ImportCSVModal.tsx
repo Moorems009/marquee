@@ -51,10 +51,36 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
   }
 
   function parseCSV(text: string): CSVRow[] {
+    function splitCSVLine(line: string): string[] {
+      const values: string[] = []
+      let current = ''
+      let inQuotes = false
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i]
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"'
+            i++
+          } else {
+            inQuotes = !inQuotes
+          }
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim())
+          current = ''
+        } else {
+          current += char
+        }
+      }
+      values.push(current.trim())
+      return values
+    }
+
     const lines = text.trim().split('\n')
-    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/[^a-z]/g, ''))
+    const headers = splitCSVLine(lines[0]).map((h) => h.toLowerCase().replace(/[^a-z]/g, ''))
+
     return lines.slice(1).map((line) => {
-      const values = line.split(',').map((v) => v.trim().replace(/^"|"$/g, ''))
+      const values = splitCSVLine(line)
       const row: Record<string, string> = {}
       headers.forEach((h, i) => { row[h] = values[i] || '' })
       return {
