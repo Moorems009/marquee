@@ -3,8 +3,8 @@
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { searchMovies, getMovieCredits, getPosterUrl } from '@/lib/tmdb'
-import { Movie, Label } from '@/lib/types'
-import { inputStyle, fieldLabelStyle } from '@/lib/styles'
+import { Movie } from '@/lib/types'
+import { inputStyle } from '@/lib/styles'
 
 type CSVRow = {
   title: string
@@ -21,6 +21,7 @@ type ImportRow = {
   row: CSVRow
   status: ImportStatus
   message?: string
+  warning?: string
 }
 
 type Props = {
@@ -37,17 +38,27 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
   const [isImporting, setIsImporting] = useState(false)
   const [currentDuplicateIndex, setCurrentDuplicateIndex] = useState<number | null>(null)
   const [summary, setSummary] = useState<{ imported: number; skipped: number; errors: number } | null>(null)
-const [progress, setProgress] = useState<{ current: number; total: number } | null>(null)
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null)
+
+  function normalizeFormat(raw: string): string | null {
+    const val = raw.trim().toLowerCase().replace(/[\s\-_.]/g, '')
+    if (['4k', '4kuhd', '4kultrahd', 'ultrahd', 'uhd4k'].includes(val)) return '4K'
+    if (['bluray', 'blu', 'blueray', 'bray', 'bd'].includes(val)) return 'Blu-ray'
+    if (['dvd'].includes(val)) return 'DVD'
+    if (['vhs'].includes(val)) return 'VHS'
+    if (['digital', 'dig', 'stream', 'streaming'].includes(val)) return 'Digital'
+    return null
+  }
 
   function parseCSV(text: string): CSVRow[] {
     const lines = text.trim().split('\n')
-    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase())
+    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/[^a-z]/g, ''))
     return lines.slice(1).map((line) => {
       const values = line.split(',').map((v) => v.trim().replace(/^"|"$/g, ''))
       const row: Record<string, string> = {}
       headers.forEach((h, i) => { row[h] = values[i] || '' })
       return {
-        title: row['title'] || '',
+        title: row['title'] || row['name'] || '',
         director: row['director'] || '',
         year: row['year'] || '',
         format: row['format'] || '',
@@ -71,7 +82,15 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
             m.title.toLowerCase() === row.title.toLowerCase() &&
             String(m.year) === String(row.year)
         )
-        return { row, status: isDuplicate ? 'duplicate' : 'pending' }
+        const formatWarning = row.format && !normalizeFormat(row.format)
+          ? `Unknown format "${row.format}" — will default to Blu-ray`
+          : undefined
+
+        return {
+          row,
+          status: isDuplicate ? 'duplicate' : 'pending',
+          warning: formatWarning
+        }
       })
       setRows(importRows)
       setIsParsed(true)
@@ -87,9 +106,9 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
     const { row } = importRow
     let director = row.director || ''
     let posterUrl = null
-    let format = row.format || 'Blu-ray'
+    const normalizedFormat = row.format ? normalizeFormat(row.format) : null
+    const format = normalizedFormat || 'Blu-ray'
 
-    // TMDB lookup
     try {
       const results = await searchMovies(row.title)
       const match = results.find((r: { title: string; release_date: string }) =>
@@ -108,7 +127,6 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
       // TMDB failed, continue with what we have
     }
 
-    // Insert movie
     const { data: movieData, error: movieError } = await supabase
       .from('movies')
       .insert([{
@@ -125,11 +143,9 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
 
     if (movieError || !movieData) return 'error'
 
-    // Handle labels
     if (row.labels) {
       const labelNames = row.labels.split(';').map((l) => l.trim()).filter(Boolean)
       for (const name of labelNames) {
-        // Check if label exists
         const { data: existingLabel } = await supabase
           .from('labels')
           .select('*')
@@ -165,10 +181,8 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
     let skipped = 0
     let errors = 0
 
-    const pending = rowsToImport.filter((r) => r.status === 'pending')
-    const total = pending.length
+    const total = rowsToImport.filter((r) => r.status === 'pending').length
     let current = 0
-
     setProgress({ current: 0, total })
 
     const updatedRows = [...rowsToImport]
@@ -202,7 +216,6 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
   }
 
   async function handleStartImport() {
-    // Find first unresolved duplicate
     const firstDuplicate = rows.findIndex((r) => r.status === 'duplicate')
     if (firstDuplicate !== -1) {
       setCurrentDuplicateIndex(firstDuplicate)
@@ -218,7 +231,6 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
     if (choice === 'skip') {
       updatedRows[currentDuplicateIndex] = { ...updatedRows[currentDuplicateIndex], status: 'done', message: 'Skipped' }
     } else {
-      // Delete existing movie first, then mark as pending
       const row = updatedRows[currentDuplicateIndex].row
       const existing = existingMovies.find(
         (m) =>
@@ -233,7 +245,6 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
 
     setRows(updatedRows)
 
-    // Find next duplicate
     const nextDuplicate = updatedRows.findIndex((r, i) => i > currentDuplicateIndex && r.status === 'duplicate')
     if (nextDuplicate !== -1) {
       setCurrentDuplicateIndex(nextDuplicate)
@@ -300,6 +311,7 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
             <p style={{ color: 'var(--warm-gray)', fontSize: '0.875rem', marginBottom: '1rem' }}>
               Upload a CSV with columns: <strong>Title, Director, Year, Format, Imprint, Labels</strong>.
               Labels should be separated by semicolons (e.g. <em>Horror;Criterion</em>).
+              Valid formats: <strong>4K, Blu-ray, DVD, VHS, Digital</strong>.
             </p>
             <input
               ref={fileRef}
@@ -367,6 +379,9 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
               {rows.filter(r => r.status === 'duplicate').length > 0 &&
                 ` · ${rows.filter(r => r.status === 'duplicate').length} duplicate${rows.filter(r => r.status === 'duplicate').length !== 1 ? 's' : ''}`
               }
+              {rows.filter(r => r.warning).length > 0 &&
+                ` · ${rows.filter(r => r.warning).length} format warning${rows.filter(r => r.warning).length !== 1 ? 's' : ''}`
+              }
             </p>
             <div style={{
               border: '1px solid var(--powder-blue)',
@@ -380,32 +395,40 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
                   key={i}
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
+                    flexDirection: 'column',
+                    gap: '0.2rem',
                     padding: '0.5rem 0.75rem',
                     backgroundColor: i % 2 === 0 ? 'white' : 'var(--cream)',
                     borderBottom: '1px solid var(--powder-blue)',
                     fontSize: '0.8rem'
                   }}
                 >
-                  <span style={{ color: statusColor(r.status), fontWeight: 'bold', width: '12px', textAlign: 'center' }}>
-                    {statusIcon(r.status)}
-                  </span>
-                  <span style={{ color: 'var(--navy)', flex: 1 }}>
-                    {r.row.title}
-                    {r.row.year && <span style={{ color: 'var(--warm-gray)', marginLeft: '0.4rem' }}>({r.row.year})</span>}
-                  </span>
-                  {r.message && (
-                    <span style={{ color: 'var(--warm-gray)', fontSize: '0.75rem', fontStyle: 'italic' }}>
-                      {r.message}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{ color: statusColor(r.status), fontWeight: 'bold', width: '12px', textAlign: 'center' }}>
+                      {statusIcon(r.status)}
                     </span>
+                    <span style={{ color: 'var(--navy)', flex: 1 }}>
+                      {r.row.title}
+                      {r.row.year && <span style={{ color: 'var(--warm-gray)', marginLeft: '0.4rem' }}>({r.row.year})</span>}
+                    </span>
+                    {r.message && (
+                      <span style={{ color: 'var(--warm-gray)', fontSize: '0.75rem', fontStyle: 'italic' }}>
+                        {r.message}
+                      </span>
+                    )}
+                  </div>
+                  {r.warning && (
+                    <div style={{ paddingLeft: '1.5rem', color: 'var(--warm-gray)', fontSize: '0.72rem', fontStyle: 'italic' }}>
+                      ⚠ {r.warning}
+                    </div>
                   )}
                 </div>
               ))}
             </div>
           </div>
         )}
-{/* Progress bar */}
+
+        {/* Progress bar */}
         {progress && (
           <div style={{ marginBottom: '1rem' }}>
             <div style={{
@@ -435,7 +458,7 @@ const [progress, setProgress] = useState<{ current: number; total: number } | nu
             </div>
           </div>
         )}
-   
+
         {/* Summary */}
         {summary && (
           <div style={{
