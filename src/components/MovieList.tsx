@@ -108,11 +108,6 @@ export default function MovieList({
                       — {movie.director}
                     </span>
                   )}
-                  {movie.imprint && (
-                    <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem', fontSize: '0.75rem', fontStyle: 'italic' }}>
-                      [{movie.imprint}]
-                    </span>
-                  )}
                   {movieLabels[movie.id]?.length > 0 && (
                     <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
                       {movieLabels[movie.id].map((label) => (
@@ -147,6 +142,19 @@ export default function MovieList({
                 }}>
                   {movie.format}
                 </span>
+                {movie.imprint && (
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontStyle: 'italic',
+                    color: 'var(--navy)',
+                    backgroundColor: 'var(--powder-blue)',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '2px',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {movie.imprint}
+                  </span>
+                )}
                 <button
                   onClick={() => onEdit(movie)}
                   style={{
@@ -224,6 +232,20 @@ export default function MovieList({
                 }}>
                   {movie.format}
                 </div>
+                {movie.imprint && (
+                  <div style={{
+                    fontSize: '0.65rem',
+                    fontStyle: 'italic',
+                    color: 'var(--navy)',
+                    backgroundColor: 'var(--powder-blue)',
+                    padding: '0.1rem 0.4rem',
+                    borderRadius: '2px',
+                    display: 'inline-block',
+                    marginLeft: '0.25rem'
+                  }}>
+                    {movie.imprint}
+                  </div>
+                )}
                 {movieLabels[movie.id]?.length > 0 && (
                   <div style={{ display: 'flex', gap: '0.2rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
                     {movieLabels[movie.id].map((label) => (

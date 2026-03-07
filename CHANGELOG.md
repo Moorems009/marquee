@@ -11,6 +11,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+## [0.6.0] - 2026-03-07
+
+### feat
+- Display imprint as a powder-blue badge in list view (alongside the format badge) and grid view (inline next to format)
+- Remove old inline italic [imprint] text from list view
+
+---
+
 ## [0.5.1] - 2026-03-07
 
 ### chore
