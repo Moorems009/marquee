@@ -1,324 +1,77 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-
-type Movie = {
-  id: string
-  title: string
-  year: number
-  format: string
-  imprint: string | null
-  director: string | null
-  poster_url: string | null
-}
-
-type Label = {
-  id: string
-  name: string
-}
-
-type TMDBResult = {
-  id: number
-  title: string
-  release_date: string
-  poster_path: string | null
-}
+import { useMovies } from '@/hooks/useMovies'
+import { useLabels } from '@/hooks/useLabels'
+import { Movie, Label } from '@/lib/types'
+import AddMovieForm from './AddMovieForm'
+import MovieList from './MovieList'
+import EditMovieModal from './EditMovieModal'
 
 export default function MovieLibrary() {
   const supabase = createClient()
   const router = useRouter()
-  const [movies, setMovies] = useState<Movie[]>([])
-  const [labels, setLabels] = useState<Label[]>([])
-  const [movieLabels, setMovieLabels] = useState<Record<string, Label[]>>({})
-  const [loading, setLoading] = useState(true)
-  const [title, setTitle] = useState('')
-  const [year, setYear] = useState('')
-  const [format, setFormat] = useState('Blu-ray')
-  const [imprint, setImprint] = useState('')
-  const [director, setDirector] = useState('')
-  const [posterUrl, setPosterUrl] = useState('')
-  const [message, setMessage] = useState('')
+  const { movies, loading, fetchMovies, updateMovie, deleteMovie } = useMovies()
+  const { labels, movieLabels, fetchLabels, fetchMovieLabels, createLabel, addLabelToMovie, removeLabelFromMovie } = useLabels()
   const [userEmail, setUserEmail] = useState('')
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [editMovie, setEditMovie] = useState<Movie | null>(null)
   const [editData, setEditData] = useState<Partial<Movie>>({})
   const [editMovieLabels, setEditMovieLabels] = useState<Label[]>([])
-  const [labelInput, setLabelInput] = useState('')
-  const [labelSuggestions, setLabelSuggestions] = useState<Label[]>([])
-  const [showLabelDropdown, setShowLabelDropdown] = useState(false)
-  const [tmdbResults, setTmdbResults] = useState<TMDBResult[]>([])
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
-  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  async function fetchMovies() {
-    const { data: authData } = await supabase.auth.getUser()
-    const user = authData.user
-    setUserEmail(user?.email || '')
-
-    const { data, error } = await supabase
-      .from('movies')
-      .select('*')
-      .eq('user_id', user?.id)
-      .order('title', { ascending: true })
-
-    if (!error && data) setMovies(data)
-    setLoading(false)
-  }
-
-  async function fetchLabels() {
-    const { data: authData } = await supabase.auth.getUser()
-    const user = authData.user
-
-    const { data, error } = await supabase
-      .from('labels')
-      .select('*')
-      .eq('user_id', user?.id)
-      .order('name', { ascending: true })
-
-    if (!error && data) setLabels(data)
-  }
-
-  async function fetchMovieLabels() {
-    const { data, error } = await supabase
-      .from('movie_labels')
-      .select('movie_id, labels(id, name)')
-
-    if (!error && data) {
-      const map: Record<string, Label[]> = {}
-      data.forEach((row: { movie_id: string; labels: Label | Label[] }) => {
-        if (!map[row.movie_id]) map[row.movie_id] = []
-        const label = Array.isArray(row.labels) ? row.labels[0] : row.labels
-        if (label) map[row.movie_id].push(label)
-      })
-      setMovieLabels(map)
-    }
-  }
 
   useEffect(() => {
-    fetchMovies()
-    fetchLabels()
-    fetchMovieLabels()
-  }, [])
-
-  function handleLabelInput(value: string) {
-    setLabelInput(value)
-    if (value.trim().length === 0) {
-      setLabelSuggestions([])
-      setShowLabelDropdown(false)
-      return
-    }
-    const filtered = labels.filter(
-      (l) =>
-        l.name.toLowerCase().includes(value.toLowerCase()) &&
-        !editMovieLabels.find((el) => el.id === l.id)
-    )
-    setLabelSuggestions(filtered)
-    setShowLabelDropdown(filtered.length > 0)
-  }
-
-  async function handleSelectExistingLabel(label: Label) {
-    if (!editMovie) return
-    await supabase
-      .from('movie_labels')
-      .insert([{ movie_id: editMovie.id, label_id: label.id }])
-    setEditMovieLabels([...editMovieLabels, label])
-    setLabelInput('')
-    setShowLabelDropdown(false)
-    fetchMovieLabels()
-  }
-
-  async function handleRemoveLabel(label: Label) {
-    if (!editMovie) return
-    await supabase
-      .from('movie_labels')
-      .delete()
-      .eq('movie_id', editMovie.id)
-      .eq('label_id', label.id)
-    setEditMovieLabels(editMovieLabels.filter((l) => l.id !== label.id))
-    fetchMovieLabels()
-  }
-
-  async function searchTMDB(query: string) {
-    if (query.length < 3) {
-      setTmdbResults([])
-      setShowDropdown(false)
-      return
-    }
-
-    const res = await fetch(
-      `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&language=en-US&page=1`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-
-    const data = await res.json()
-    setTmdbResults(data.results?.slice(0, 6) || [])
-    setShowDropdown(true)
-  }
-
-  function handleTitleChange(value: string) {
-    setTitle(value)
-    if (searchTimeout.current) clearTimeout(searchTimeout.current)
-    searchTimeout.current = setTimeout(() => searchTMDB(value), 300)
-  }
-
-  async function handleSelectTMDB(result: TMDBResult) {
-    setTitle(result.title)
-    setYear(result.release_date ? result.release_date.split('-')[0] : '')
-    setShowDropdown(false)
-    setTmdbResults([])
-
-    if (result.poster_path) {
-      setPosterUrl(`https://image.tmdb.org/t/p/w500${result.poster_path}`)
-    }
-
-    const res = await fetch(
-      `https://api.themoviedb.org/3/movie/${result.id}/credits`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    const data = await res.json()
-    const directorCredit = data.crew?.find((c: { job: string; name: string }) => c.job === 'Director')
-    if (directorCredit) setDirector(directorCredit.name)
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setMessage('')
-
-    const { data: authData } = await supabase.auth.getUser()
-    const user = authData.user
-
-    const { error } = await supabase
-      .from('movies')
-      .insert([{ title, year: parseInt(year), format, imprint, director, poster_url: posterUrl || null, user_id: user?.id }])
-
-    if (error) {
-      setMessage(`Error: ${error.message}`)
-    } else {
-      setMessage('Movie added!')
-      setTitle('')
-      setYear('')
-      setFormat('Blu-ray')
-      setImprint('')
-      setDirector('')
-      setPosterUrl('')
+    async function init() {
+      const { data: authData } = await supabase.auth.getUser()
+      setUserEmail(authData.user?.email || '')
       fetchMovies()
+      fetchLabels()
+      fetchMovieLabels()
     }
-  }
+    init()
+  }, [])
 
   function openEdit(movie: Movie) {
     setEditMovie(movie)
     setEditData({ ...movie })
     setEditMovieLabels(movieLabels[movie.id] || [])
-    setLabelInput('')
-    setShowLabelDropdown(false)
   }
 
   function closeEdit() {
     setEditMovie(null)
     setEditData({})
     setEditMovieLabels([])
-    setLabelInput('')
-    setShowLabelDropdown(false)
   }
 
-  async function handleSave() {
+  async function handleSave(updates: Partial<Movie>, newLabelName: string) {
     if (!editMovie) return
 
-    // Save movie fields
-    const { error } = await supabase
-      .from('movies')
-      .update({
-        title: editData.title,
-        year: editData.year,
-        format: editData.format,
-        director: editData.director,
-        imprint: editData.imprint,
-        poster_url: editData.poster_url,
-      })
-      .eq('id', editMovie.id)
+    await updateMovie(editMovie.id, updates)
 
-    if (error) {
-      setMessage(`Error: ${error.message}`)
-      return
-    }
-
-    // If there's a new label typed, create it and tag it
-    if (labelInput.trim().length > 0) {
+    if (newLabelName.trim().length > 0) {
       const { data: authData } = await supabase.auth.getUser()
       const user = authData.user
-
-      const { data: newLabel, error: labelError } = await supabase
-        .from('labels')
-        .insert([{ name: labelInput.trim(), user_id: user?.id }])
-        .select()
-        .single()
-
-      if (!labelError && newLabel) {
-        await supabase
-          .from('movie_labels')
-          .insert([{ movie_id: editMovie.id, label_id: newLabel.id }])
+      const { data: newLabel } = await createLabel(newLabelName.trim(), user?.id || '')
+      if (newLabel) {
+        await addLabelToMovie(editMovie.id, newLabel.id)
       }
-
-      await fetchLabels()
     }
 
     await fetchMovieLabels()
     closeEdit()
-    fetchMovies()
   }
 
   async function handleDelete() {
     if (!editMovie) return
-
-    const { error } = await supabase
-      .from('movies')
-      .delete()
-      .eq('id', editMovie.id)
-
-    if (error) {
-      setMessage(`Error: ${error.message}`)
-    } else {
-      closeEdit()
-      fetchMovies()
-      fetchMovieLabels()
-    }
+    await deleteMovie(editMovie.id)
+    await fetchMovieLabels()
+    closeEdit()
   }
 
   async function handleSignOut() {
     await supabase.auth.signOut({ scope: 'local' })
     router.push('/auth')
-  }
-
-  const inputStyle = {
-    padding: '0.5rem 0.75rem',
-    border: '1px solid var(--powder-blue)',
-    borderRadius: '2px',
-    fontFamily: 'Georgia, serif',
-    backgroundColor: 'var(--cream)',
-    color: 'var(--navy)',
-    width: '100%',
-    boxSizing: 'border-box' as const
-  }
-
-  const labelStyle = {
-    fontSize: '0.75rem',
-    color: 'var(--warm-gray)',
-    display: 'block' as const,
-    marginBottom: '0.25rem',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.05em'
   }
 
   return (
@@ -360,608 +113,37 @@ export default function MovieLibrary() {
         </button>
       </div>
 
-      {/* Add Movie Form */}
-      <div style={{
-        backgroundColor: 'white',
-        border: '1px solid var(--powder-blue)',
-        borderRadius: '4px',
-        padding: '1.5rem',
-        marginBottom: '2rem'
-      }}>
-        <h2 style={{
-          margin: '0 0 1rem 0',
-          fontSize: '1.1rem',
-          color: 'var(--dusty-rose)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em'
-        }}>Add to your library</h2>
-        <form onSubmit={handleSubmit}>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-            <div style={{ flex: '3', minWidth: '160px', position: 'relative' }}>
-              <input
-                type="text"
-                placeholder="Title"
-                value={title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-                required
-                style={{ ...inputStyle, width: '100%' }}
-              />
-              {showDropdown && tmdbResults.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  backgroundColor: 'white',
-                  border: '1px solid var(--powder-blue)',
-                  borderTop: 'none',
-                  borderRadius: '0 0 4px 4px',
-                  zIndex: 100,
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                }}>
-                  {tmdbResults.map((result) => (
-                    <div
-                      key={result.id}
-                      onMouseDown={() => handleSelectTMDB(result)}
-                      style={{
-                        padding: '0.5rem 0.75rem',
-                        cursor: 'pointer',
-                        borderBottom: '1px solid var(--powder-blue)',
-                        fontSize: '0.875rem',
-                        color: 'var(--navy)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
-                    >
-                      {result.poster_path && (
-                        <img
-                          src={`https://image.tmdb.org/t/p/w92${result.poster_path}`}
-                          alt={result.title}
-                          style={{ width: '32px', height: '48px', objectFit: 'cover', borderRadius: '2px' }}
-                        />
-                      )}
-                      <div>
-                        <span style={{ fontWeight: 'bold' }}>{result.title}</span>
-                        {result.release_date && (
-                          <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem' }}>
-                            ({result.release_date.split('-')[0]})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <input
-              type="text"
-              placeholder="Director"
-              value={director}
-              onChange={(e) => setDirector(e.target.value)}
-              style={{ ...inputStyle, flex: '2', minWidth: '140px', width: 'auto' }}
-            />
-            <input
-              type="number"
-              placeholder="Year"
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              required
-              style={{ ...inputStyle, flex: '1', minWidth: '80px', width: 'auto' }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <select
-              value={format}
-              onChange={(e) => setFormat(e.target.value)}
-              style={{ ...inputStyle, flex: '1', minWidth: '100px', width: 'auto' }}
-            >
-              <option>Blu-ray</option>
-              <option>4K UHD</option>
-              <option>4K</option>
-              <option>DVD</option>
-              <option>VHS</option>
-              <option>Digital</option>
-            </select>
-            <input
-              type="text"
-              placeholder="Imprint (e.g. Criterion, Arrow)"
-              value={imprint}
-              onChange={(e) => setImprint(e.target.value)}
-              style={{ ...inputStyle, flex: '3', minWidth: '160px', width: 'auto' }}
-            />
-            <button
-              type="submit"
-              style={{
-                backgroundColor: 'var(--powder-blue)',
-                color: 'var(--navy)',
-                border: 'none',
-                padding: '0.5rem 1.5rem',
-                cursor: 'pointer',
-                fontFamily: 'Georgia, serif',
-                borderRadius: '2px',
-                fontWeight: 'bold'
-              }}
-            >
-              Add
-            </button>
-          </div>
-        </form>
-        {message && (
-          <p style={{ margin: '0.75rem 0 0 0', color: 'var(--dusty-rose)', fontSize: '0.875rem' }}>
-            {message}
-          </p>
-        )}
-      </div>
+      <AddMovieForm onMovieAdded={fetchMovies} />
 
-      {/* Library Header with View Toggle */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem'
-      }}>
-        <h2 style={{
-          fontSize: '1.1rem',
-          color: 'var(--dusty-rose)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          margin: 0
-        }}>My Library</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button
-            onClick={() => setViewMode('list')}
-            style={{
-              backgroundColor: viewMode === 'list' ? 'var(--powder-blue)' : 'white',
-              color: 'var(--navy)',
-              border: '1px solid var(--powder-blue)',
-              padding: '0.3rem 0.75rem',
-              cursor: 'pointer',
-              fontFamily: 'Georgia, serif',
-              borderRadius: '2px',
-              fontSize: '0.8rem'
-            }}
-          >
-            ☰ List
-          </button>
-          <button
-            onClick={() => setViewMode('grid')}
-            style={{
-              backgroundColor: viewMode === 'grid' ? 'var(--powder-blue)' : 'white',
-              color: 'var(--navy)',
-              border: '1px solid var(--powder-blue)',
-              padding: '0.3rem 0.75rem',
-              cursor: 'pointer',
-              fontFamily: 'Georgia, serif',
-              borderRadius: '2px',
-              fontSize: '0.8rem'
-            }}
-          >
-            ⊞ Grid
-          </button>
-        </div>
-      </div>
+      <MovieList
+        movies={movies}
+        loading={loading}
+        viewMode={viewMode}
+        movieLabels={movieLabels}
+        onEdit={openEdit}
+        onViewModeChange={setViewMode}
+      />
 
-      {/* Movie List / Grid */}
-      {loading ? (
-        <p style={{ color: 'var(--warm-gray)' }}>Loading...</p>
-      ) : movies.length === 0 ? (
-        <p style={{ color: 'var(--warm-gray)', fontStyle: 'italic' }}>No movies yet. Add some!</p>
-      ) : viewMode === 'list' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {movies.map((movie) => (
-            <div
-              key={movie.id}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.75rem 1rem',
-                backgroundColor: 'white',
-                border: '1px solid var(--powder-blue)',
-                borderRadius: '4px',
-                borderLeft: '4px solid var(--blush)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                {movie.poster_url && (
-                  <img
-                    src={movie.poster_url}
-                    alt={movie.title}
-                    style={{ width: '32px', height: '48px', objectFit: 'cover', borderRadius: '2px' }}
-                  />
-                )}
-                <div>
-                  <span style={{ fontWeight: 'bold', color: 'var(--navy)' }}>{movie.title}</span>
-                  <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem', fontSize: '0.875rem' }}>
-                    ({movie.year})
-                  </span>
-                  {movie.director && (
-                    <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem', fontSize: '0.875rem' }}>
-                      — {movie.director}
-                    </span>
-                  )}
-                  {movie.imprint && (
-                    <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem', fontSize: '0.75rem', fontStyle: 'italic' }}>
-                      [{movie.imprint}]
-                    </span>
-                  )}
-                  {movieLabels[movie.id]?.length > 0 && (
-                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
-                      {movieLabels[movie.id].map((label) => (
-                        <span
-                          key={label.id}
-                          style={{
-                            backgroundColor: 'var(--butter)',
-                            color: 'var(--navy)',
-                            padding: '0.1rem 0.5rem',
-                            borderRadius: '999px',
-                            fontSize: '0.7rem',
-                            fontFamily: 'Georgia, serif'
-                          }}
-                        >
-                          {label.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{
-                  fontSize: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: 'white',
-                  backgroundColor: 'var(--mint)',
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: '2px',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {movie.format}
-                </span>
-                <button
-                  onClick={() => openEdit(movie)}
-                  style={{
-                    background: 'none',
-                    border: '1px solid var(--powder-blue)',
-                    color: 'var(--warm-gray)',
-                    padding: '0.2rem 0.6rem',
-                    cursor: 'pointer',
-                    fontFamily: 'Georgia, serif',
-                    borderRadius: '2px',
-                    fontSize: '0.75rem'
-                  }}
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-          gap: '1rem'
-        }}>
-          {movies.map((movie) => (
-            <div
-              key={movie.id}
-              onClick={() => openEdit(movie)}
-              style={{
-                cursor: 'pointer',
-                borderRadius: '4px',
-                overflow: 'hidden',
-                border: '1px solid var(--powder-blue)',
-                backgroundColor: 'white',
-                transition: 'transform 0.1s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.03)')}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-            >
-              {movie.poster_url ? (
-                <img
-                  src={movie.poster_url}
-                  alt={movie.title}
-                  style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
-                />
-              ) : (
-                <div style={{
-                  width: '100%',
-                  aspectRatio: '2/3',
-                  backgroundColor: 'var(--cream)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0.5rem',
-                  textAlign: 'center'
-                }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--warm-gray)', fontStyle: 'italic' }}>
-                    {movie.title}
-                  </span>
-                </div>
-              )}
-              <div style={{ padding: '0.5rem' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--navy)', marginBottom: '0.2rem' }}>
-                  {movie.title}
-                </div>
-                <div style={{
-                  fontSize: '0.65rem',
-                  textTransform: 'uppercase',
-                  color: 'white',
-                  backgroundColor: 'var(--mint)',
-                  padding: '0.1rem 0.4rem',
-                  borderRadius: '2px',
-                  display: 'inline-block'
-                }}>
-                  {movie.format}
-                </div>
-                {movieLabels[movie.id]?.length > 0 && (
-                  <div style={{ display: 'flex', gap: '0.2rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
-                    {movieLabels[movie.id].map((label) => (
-                      <span
-                        key={label.id}
-                        style={{
-                          backgroundColor: 'var(--butter)',
-                          color: 'var(--navy)',
-                          padding: '0.1rem 0.4rem',
-                          borderRadius: '999px',
-                          fontSize: '0.6rem'
-                        }}
-                      >
-                        {label.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-{/* Edit Modal */}
       {editMovie && (
-        <div
-          onClick={closeEdit}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(44, 62, 107, 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
+        <EditMovieModal
+          movie={editMovie}
+          editData={editData}
+          editMovieLabels={editMovieLabels}
+          labels={labels}
+          onClose={closeEdit}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          onSelectExistingLabel={async (label) => {
+            await addLabelToMovie(editMovie.id, label.id)
+            setEditMovieLabels([...editMovieLabels, label])
           }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: 'var(--cream)',
-              border: '1px solid var(--powder-blue)',
-              borderRadius: '4px',
-              padding: '2rem',
-              width: '100%',
-              maxWidth: '500px',
-              margin: '1rem',
-              maxHeight: '90vh',
-              overflowY: 'auto'
-            }}
-          >
-            <h2 style={{
-              margin: '0 0 1.5rem 0',
-              fontSize: '1.1rem',
-              color: 'var(--dusty-rose)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em'
-            }}>Edit Movie</h2>
-
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              {editData.poster_url && (
-                <img
-                  src={editData.poster_url}
-                  alt={editData.title}
-                  style={{ width: '80px', height: '120px', objectFit: 'cover', borderRadius: '2px', flexShrink: 0 }}
-                />
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-                <div>
-                  <label style={labelStyle}>Title</label>
-                  <input
-                    type="text"
-                    value={editData.title || ''}
-                    onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Director</label>
-                  <input
-                    type="text"
-                    value={editData.director || ''}
-                    onChange={(e) => setEditData({ ...editData, director: e.target.value })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Year</label>
-                  <input
-                    type="number"
-                    value={editData.year || ''}
-                    onChange={(e) => setEditData({ ...editData, year: parseInt(e.target.value) })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Format</label>
-                  <select
-                    value={editData.format || 'Blu-ray'}
-                    onChange={(e) => setEditData({ ...editData, format: e.target.value })}
-                    style={inputStyle}
-                  >
-                    <option>Blu-ray</option>
-                    <option>4K UHD</option>
-                    <option>4K</option>
-                    <option>DVD</option>
-                    <option>VHS</option>
-                    <option>Digital</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>Imprint</label>
-                  <input
-                    type="text"
-                    value={editData.imprint || ''}
-                    onChange={(e) => setEditData({ ...editData, imprint: e.target.value })}
-                    style={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Labels</label>
-                  {editMovieLabels.length > 0 && (
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem', marginTop: '0.25rem' }}>
-                      {editMovieLabels.map((label) => (
-                        <span
-                          key={label.id}
-                          style={{
-                            backgroundColor: 'var(--butter)',
-                            color: 'var(--navy)',
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '999px',
-                            fontSize: '0.8rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.3rem'
-                          }}
-                        >
-                          {label.name}
-                          <button
-                            onClick={() => handleRemoveLabel(label)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              color: 'var(--warm-gray)',
-                              padding: 0,
-                              fontSize: '0.75rem',
-                              lineHeight: 1
-                            }}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="text"
-                      placeholder="Add a label..."
-                      value={labelInput}
-                      onChange={(e) => handleLabelInput(e.target.value)}
-                      onBlur={() => setTimeout(() => setShowLabelDropdown(false), 150)}
-                      style={inputStyle}
-                    />
-                    {showLabelDropdown && labelSuggestions.length > 0 && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        backgroundColor: 'white',
-                        border: '1px solid var(--powder-blue)',
-                        borderTop: 'none',
-                        borderRadius: '0 0 4px 4px',
-                        zIndex: 100,
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                      }}>
-                        {labelSuggestions.map((label) => (
-                          <div
-                            key={label.id}
-                            onMouseDown={() => handleSelectExistingLabel(label)}
-                            style={{
-                              padding: '0.5rem 0.75rem',
-                              cursor: 'pointer',
-                              fontSize: '0.875rem',
-                              color: 'var(--navy)',
-                              borderBottom: '1px solid var(--powder-blue)'
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
-                          >
-                            {label.name}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--warm-gray)', margin: '0.4rem 0 0 0', fontStyle: 'italic' }}>
-                    Select an existing label or type a new one and click Save
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-              <button
-                onClick={handleDelete}
-                style={{
-                  backgroundColor: 'white',
-                  color: 'var(--dusty-rose)',
-                  border: '1px solid var(--dusty-rose)',
-                  padding: '0.5rem 1rem',
-                  cursor: 'pointer',
-                  fontFamily: 'Georgia, serif',
-                  borderRadius: '2px',
-                  fontSize: '0.875rem'
-                }}
-              >
-                Delete
-              </button>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button
-                  onClick={closeEdit}
-                  style={{
-                    backgroundColor: 'white',
-                    color: 'var(--warm-gray)',
-                    border: '1px solid var(--warm-gray)',
-                    padding: '0.5rem 1rem',
-                    cursor: 'pointer',
-                    fontFamily: 'Georgia, serif',
-                    borderRadius: '2px',
-                    fontSize: '0.875rem'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  style={{
-                    backgroundColor: 'var(--powder-blue)',
-                    color: 'var(--navy)',
-                    border: 'none',
-                    padding: '0.5rem 1rem',
-                    cursor: 'pointer',
-                    fontFamily: 'Georgia, serif',
-                    borderRadius: '2px',
-                    fontSize: '0.875rem',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          onRemoveLabel={async (label) => {
+            await removeLabelFromMovie(editMovie.id, label.id)
+            setEditMovieLabels(editMovieLabels.filter((l) => l.id !== label.id))
+          }}
+          setEditData={setEditData}
+        />
       )}
     </div>
   )
 }
-      
