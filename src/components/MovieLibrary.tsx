@@ -10,6 +10,7 @@ import AddMovieForm from './AddMovieForm'
 import MovieList from './MovieList'
 import EditMovieModal from './EditMovieModal'
 import ImportCSVModal from './ImportCSVModal'
+import SettingsModal from './SettingsModal'
 
 export default function MovieLibrary() {
   const supabase = createClient()
@@ -23,11 +24,14 @@ export default function MovieLibrary() {
   const [editMovieLabels, setEditMovieLabels] = useState<Label[]>([])
   const [showImportModal, setShowImportModal] = useState(false)
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   useEffect(() => {
     async function init() {
       const { data: authData } = await supabase.auth.getUser()
       setUserEmail(authData.user?.email || '')
+      const savedView = authData.user?.user_metadata?.settings?.defaultView
+      if (savedView === 'grid' || savedView === 'list') setViewMode(savedView)
       fetchMovies()
       fetchLabels()
       fetchMovieLabels()
@@ -140,6 +144,26 @@ export default function MovieLibrary() {
                 {userEmail}
               </div>
               <button
+                onClick={() => { setShowSettingsMenu(false); setShowSettingsModal(true) }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: '1px solid var(--powder-blue)',
+                  padding: '0.6rem 1rem',
+                  cursor: 'pointer',
+                  fontFamily: 'Georgia, serif',
+                  fontSize: '0.875rem',
+                  color: 'var(--navy)'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+              >
+                Settings
+              </button>
+              <button
                 onClick={() => { setShowSettingsMenu(false); setShowImportModal(true) }}
                 style={{
                   display: 'block',
@@ -214,6 +238,13 @@ export default function MovieLibrary() {
           setEditData={setEditData}
         />
       )}
+    {showSettingsModal && (
+      <SettingsModal
+        currentSettings={{ defaultView: viewMode }}
+        onClose={() => setShowSettingsModal(false)}
+        onSave={(settings) => setViewMode(settings.defaultView)}
+      />
+    )}
     {showImportModal && (
   <ImportCSVModal
     existingMovies={movies}
