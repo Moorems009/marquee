@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { searchMovies, getMovieCredits, getMovieRating, getPosterUrl } from '@/lib/tmdb'
+import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl } from '@/lib/tmdb'
 import { TMDBResult } from '@/lib/types'
 import { inputStyle, sectionHeadingStyle } from '@/lib/styles'
 
@@ -19,6 +19,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
   const [director, setDirector] = useState('')
   const [posterUrl, setPosterUrl] = useState('')
   const [mpaaRating, setMpaaRating] = useState('')
+  const [genre, setGenre] = useState('')
   const [message, setMessage] = useState('')
   const [tmdbResults, setTmdbResults] = useState<TMDBResult[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
@@ -49,12 +50,14 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
       setPosterUrl(getPosterUrl(result.poster_path))
     }
 
-    const [{ director: directorName }, { mpaa_rating }] = await Promise.all([
+    const [{ director: directorName }, { mpaa_rating }, { genre: genreValue }] = await Promise.all([
       getMovieCredits(result.id),
-      getMovieRating(result.id)
+      getMovieRating(result.id),
+      getMovieGenre(result.id)
     ])
     if (directorName) setDirector(directorName)
     if (mpaa_rating) setMpaaRating(mpaa_rating)
+    if (genreValue) setGenre(genreValue)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -66,7 +69,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
 
     const { error } = await supabase
       .from('movies')
-      .insert([{ title, year: parseInt(year), format, imprint, director, poster_url: posterUrl || null, mpaa_rating: mpaaRating || null, user_id: user?.id }])
+      .insert([{ title, year: parseInt(year), format, imprint, director, poster_url: posterUrl || null, mpaa_rating: mpaaRating || null, genre: genre || null, user_id: user?.id }])
 
     if (error) {
       setMessage(`Error: ${error.message}`)
@@ -79,6 +82,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
       setDirector('')
       setPosterUrl('')
       setMpaaRating('')
+      setGenre('')
       onMovieAdded()
     }
   }

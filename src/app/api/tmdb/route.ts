@@ -49,5 +49,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ mpaa_rating: certification || null })
   }
 
+  if (action === 'genre') {
+    const id = searchParams.get('id') ?? ''
+    const res = await fetch(`${TMDB_BASE}/movie/${id}`, { headers })
+    const data = await res.json()
+    const genre = data.genres?.map((g: { name: string }) => g.name).join(', ') || null
+    return NextResponse.json({ genre })
+  }
+
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
 }

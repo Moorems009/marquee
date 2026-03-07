@@ -11,6 +11,20 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+## [0.9.0] - 2026-03-07
+
+### feat
+- Add `genre text` column to the `movies` table in Supabase
+- Pull genre from TMDB `/movie/{id}` (genres array joined as comma-separated string) via new `action=genre` handler in the server-side API proxy
+- Add `getMovieGenre()` to `src/lib/tmdb.ts`
+- Auto-fill `genre` on TMDB selection in Add Movie form and Edit modal
+- Fetch and store `genre` during CSV bulk import
+- Include `genre` in Refresh TMDB Data — fills missing genre for existing library movies
+- Display genre as small italic text below the title/director line in list view and below format badges in grid view
+- Add editable Genre field to Edit modal
+
+---
+
 ## [0.8.0] - 2026-03-07
 
 ### feat

@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { Movie, Label, TMDBResult } from '@/lib/types'
 import { inputStyle, fieldLabelStyle } from '@/lib/styles'
-import { searchMovies, getMovieCredits, getMovieRating, getPosterUrl } from '@/lib/tmdb'
+import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl } from '@/lib/tmdb'
 
 type Props = {
   movie: Movie
@@ -79,12 +79,14 @@ export default function EditMovieModal({
       poster_url: result.poster_path ? getPosterUrl(result.poster_path) : editData.poster_url
     }
 
-    const [{ director }, { mpaa_rating }] = await Promise.all([
+    const [{ director }, { mpaa_rating }, { genre }] = await Promise.all([
       getMovieCredits(result.id),
-      getMovieRating(result.id)
+      getMovieRating(result.id),
+      getMovieGenre(result.id)
     ])
     if (director) updates.director = director
     if (mpaa_rating !== undefined) updates.mpaa_rating = mpaa_rating
+    if (genre !== undefined) updates.genre = genre
 
     setEditData(updates)
   }
@@ -247,6 +249,16 @@ export default function EditMovieModal({
                 placeholder="e.g. PG-13, R, NR"
                 value={editData.mpaa_rating || ''}
                 onChange={(e) => setEditData({ ...editData, mpaa_rating: e.target.value || null })}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={fieldLabelStyle}>Genre</label>
+              <input
+                type="text"
+                placeholder="e.g. Drama, Thriller"
+                value={editData.genre || ''}
+                onChange={(e) => setEditData({ ...editData, genre: e.target.value || null })}
                 style={inputStyle}
               />
             </div>

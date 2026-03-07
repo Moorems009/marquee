@@ -108,6 +108,11 @@ export default function MovieList({
                       — {movie.director}
                     </span>
                   )}
+                  {movie.genre && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--warm-gray)', fontStyle: 'italic', marginTop: '0.1rem' }}>
+                      {movie.genre}
+                    </div>
+                  )}
                   {movieLabels[movie.id]?.length > 0 && (
                     <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
                       {movieLabels[movie.id].map((label) => (
@@ -271,6 +276,16 @@ export default function MovieList({
                     fontFamily: 'Georgia, serif'
                   }}>
                     {movie.mpaa_rating}
+                  </div>
+                )}
+                {movie.genre && (
+                  <div style={{
+                    fontSize: '0.65rem',
+                    color: 'var(--warm-gray)',
+                    fontStyle: 'italic',
+                    marginTop: '0.25rem'
+                  }}>
+                    {movie.genre}
                   </div>
                 )}
                 {movieLabels[movie.id]?.length > 0 && (

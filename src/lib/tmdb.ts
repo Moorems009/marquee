@@ -16,6 +16,12 @@ export async function getMovieRating(tmdbId: number) {
   return res.json()
 }
 
+export async function getMovieGenre(tmdbId: number) {
+  const res = await fetch(`/api/tmdb?action=genre&id=${tmdbId}`)
+  if (!res.ok) return { genre: null }
+  return res.json()
+}
+
 export function getPosterUrl(posterPath: string, size: 'w92' | 'w500' = 'w500') {
   return `https://image.tmdb.org/t/p/${size}${posterPath}`
 }
