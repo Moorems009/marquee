@@ -11,6 +11,13 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+## [0.4.1] - 2026-03-07
+
+### chore
+- Add `NOTES.md` for tracking deployment steps and operational reminders
+
+---
+
 ## [0.4.0] - 2026-03-07
 
 ### feat
