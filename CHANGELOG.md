@@ -11,6 +11,18 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+## [0.8.0] - 2026-03-07
+
+### feat
+- Add "Refresh TMDB Data" button to Settings modal under a new Library Data section
+- For each movie missing poster, director, or MPAA rating: searches TMDB, fetches only the missing fields (credits and rating fetched in parallel), and updates Supabase
+- Shows a progress bar while running and a summary on completion
+- Lists any movies not found on TMDB in a scrollable box by title and year
+- Refreshes the library automatically on completion
+- Modal container gains maxHeight + overflowY scroll to handle long not-found lists
+
+---
+
 ## [0.7.0] - 2026-03-07
 
 ### feat

@@ -249,8 +249,10 @@ export default function MovieLibrary() {
         <ErrorBoundary onReset={() => setShowSettingsModal(false)}>
           <SettingsModal
             currentSettings={{ defaultView: viewMode }}
+            movies={movies}
             onClose={() => setShowSettingsModal(false)}
             onSave={(settings) => setViewMode(settings.defaultView)}
+            onRefreshComplete={fetchMovies}
           />
         </ErrorBoundary>
       )}
