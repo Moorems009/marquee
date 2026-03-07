@@ -83,9 +83,11 @@ export default function MovieList({
                 alignItems: 'center',
                 padding: '0.75rem 1rem',
                 backgroundColor: 'white',
-                border: '1px solid var(--powder-blue)',
+               borderTop: '1px solid var(--powder-blue)',
+                borderRight: '1px solid var(--powder-blue)',
+                borderBottom: '1px solid var(--powder-blue)',
+                borderLeft: '4px solid var(--blush)',
                 borderRadius: '4px',
-                borderLeft: '4px solid var(--blush)'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
