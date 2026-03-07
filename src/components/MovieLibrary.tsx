@@ -14,6 +14,11 @@ type Movie = {
   poster_url: string | null
 }
 
+type Label = {
+  id: string
+  name: string
+}
+
 type TMDBResult = {
   id: number
   title: string
@@ -25,6 +30,8 @@ export default function MovieLibrary() {
   const supabase = createClient()
   const router = useRouter()
   const [movies, setMovies] = useState<Movie[]>([])
+  const [labels, setLabels] = useState<Label[]>([])
+  const [movieLabels, setMovieLabels] = useState<Record<string, Label[]>>({})
   const [loading, setLoading] = useState(true)
   const [title, setTitle] = useState('')
   const [year, setYear] = useState('')
@@ -36,6 +43,10 @@ export default function MovieLibrary() {
   const [userEmail, setUserEmail] = useState('')
   const [editMovie, setEditMovie] = useState<Movie | null>(null)
   const [editData, setEditData] = useState<Partial<Movie>>({})
+  const [editMovieLabels, setEditMovieLabels] = useState<Label[]>([])
+  const [labelInput, setLabelInput] = useState('')
+  const [labelSuggestions, setLabelSuggestions] = useState<Label[]>([])
+  const [showLabelDropdown, setShowLabelDropdown] = useState(false)
   const [tmdbResults, setTmdbResults] = useState<TMDBResult[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
@@ -56,9 +67,78 @@ export default function MovieLibrary() {
     setLoading(false)
   }
 
+  async function fetchLabels() {
+    const { data: authData } = await supabase.auth.getUser()
+    const user = authData.user
+
+    const { data, error } = await supabase
+      .from('labels')
+      .select('*')
+      .eq('user_id', user?.id)
+      .order('name', { ascending: true })
+
+    if (!error && data) setLabels(data)
+  }
+
+  async function fetchMovieLabels() {
+    const { data, error } = await supabase
+      .from('movie_labels')
+      .select('movie_id, labels(id, name)')
+
+    if (!error && data) {
+      const map: Record<string, Label[]> = {}
+      data.forEach((row: { movie_id: string; labels: Label | Label[] }) => {
+        if (!map[row.movie_id]) map[row.movie_id] = []
+        const label = Array.isArray(row.labels) ? row.labels[0] : row.labels
+        if (label) map[row.movie_id].push(label)
+      })
+      setMovieLabels(map)
+    }
+  }
+
   useEffect(() => {
     fetchMovies()
+    fetchLabels()
+    fetchMovieLabels()
   }, [])
+
+  function handleLabelInput(value: string) {
+    setLabelInput(value)
+    if (value.trim().length === 0) {
+      setLabelSuggestions([])
+      setShowLabelDropdown(false)
+      return
+    }
+    const filtered = labels.filter(
+      (l) =>
+        l.name.toLowerCase().includes(value.toLowerCase()) &&
+        !editMovieLabels.find((el) => el.id === l.id)
+    )
+    setLabelSuggestions(filtered)
+    setShowLabelDropdown(filtered.length > 0)
+  }
+
+  async function handleSelectExistingLabel(label: Label) {
+    if (!editMovie) return
+    await supabase
+      .from('movie_labels')
+      .insert([{ movie_id: editMovie.id, label_id: label.id }])
+    setEditMovieLabels([...editMovieLabels, label])
+    setLabelInput('')
+    setShowLabelDropdown(false)
+    fetchMovieLabels()
+  }
+
+  async function handleRemoveLabel(label: Label) {
+    if (!editMovie) return
+    await supabase
+      .from('movie_labels')
+      .delete()
+      .eq('movie_id', editMovie.id)
+      .eq('label_id', label.id)
+    setEditMovieLabels(editMovieLabels.filter((l) => l.id !== label.id))
+    fetchMovieLabels()
+  }
 
   async function searchTMDB(query: string) {
     if (query.length < 3) {
@@ -110,8 +190,6 @@ export default function MovieLibrary() {
     const data = await res.json()
     const directorCredit = data.crew?.find((c: { job: string; name: string }) => c.job === 'Director')
     if (directorCredit) setDirector(directorCredit.name)
-
-   
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -142,16 +220,23 @@ export default function MovieLibrary() {
   function openEdit(movie: Movie) {
     setEditMovie(movie)
     setEditData({ ...movie })
+    setEditMovieLabels(movieLabels[movie.id] || [])
+    setLabelInput('')
+    setShowLabelDropdown(false)
   }
 
   function closeEdit() {
     setEditMovie(null)
     setEditData({})
+    setEditMovieLabels([])
+    setLabelInput('')
+    setShowLabelDropdown(false)
   }
 
   async function handleSave() {
     if (!editMovie) return
 
+    // Save movie fields
     const { error } = await supabase
       .from('movies')
       .update({
@@ -166,10 +251,32 @@ export default function MovieLibrary() {
 
     if (error) {
       setMessage(`Error: ${error.message}`)
-    } else {
-      closeEdit()
-      fetchMovies()
+      return
     }
+
+    // If there's a new label typed, create it and tag it
+    if (labelInput.trim().length > 0) {
+      const { data: authData } = await supabase.auth.getUser()
+      const user = authData.user
+
+      const { data: newLabel, error: labelError } = await supabase
+        .from('labels')
+        .insert([{ name: labelInput.trim(), user_id: user?.id }])
+        .select()
+        .single()
+
+      if (!labelError && newLabel) {
+        await supabase
+          .from('movie_labels')
+          .insert([{ movie_id: editMovie.id, label_id: newLabel.id }])
+      }
+
+      await fetchLabels()
+    }
+
+    await fetchMovieLabels()
+    closeEdit()
+    fetchMovies()
   }
 
   async function handleDelete() {
@@ -185,6 +292,7 @@ export default function MovieLibrary() {
     } else {
       closeEdit()
       fetchMovies()
+      fetchMovieLabels()
     }
   }
 
@@ -481,6 +589,25 @@ export default function MovieLibrary() {
                       [{movie.imprint}]
                     </span>
                   )}
+                  {movieLabels[movie.id]?.length > 0 && (
+                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
+                      {movieLabels[movie.id].map((label) => (
+                        <span
+                          key={label.id}
+                          style={{
+                            backgroundColor: 'var(--butter)',
+                            color: 'var(--navy)',
+                            padding: '0.1rem 0.5rem',
+                            borderRadius: '999px',
+                            fontSize: '0.7rem',
+                            fontFamily: 'Georgia, serif'
+                          }}
+                        >
+                          {label.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -573,13 +700,30 @@ export default function MovieLibrary() {
                 }}>
                   {movie.format}
                 </div>
+                {movieLabels[movie.id]?.length > 0 && (
+                  <div style={{ display: 'flex', gap: '0.2rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
+                    {movieLabels[movie.id].map((label) => (
+                      <span
+                        key={label.id}
+                        style={{
+                          backgroundColor: 'var(--butter)',
+                          color: 'var(--navy)',
+                          padding: '0.1rem 0.4rem',
+                          borderRadius: '999px',
+                          fontSize: '0.6rem'
+                        }}
+                      >
+                        {label.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
-
-      {/* Edit Modal */}
+{/* Edit Modal */}
       {editMovie && (
         <div
           onClick={closeEdit}
@@ -605,7 +749,9 @@ export default function MovieLibrary() {
               padding: '2rem',
               width: '100%',
               maxWidth: '500px',
-              margin: '1rem'
+              margin: '1rem',
+              maxHeight: '90vh',
+              overflowY: 'auto'
             }}
           >
             <h2 style={{
@@ -676,6 +822,89 @@ export default function MovieLibrary() {
                     style={inputStyle}
                   />
                 </div>
+                <div>
+                  <label style={labelStyle}>Labels</label>
+                  {editMovieLabels.length > 0 && (
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem', marginTop: '0.25rem' }}>
+                      {editMovieLabels.map((label) => (
+                        <span
+                          key={label.id}
+                          style={{
+                            backgroundColor: 'var(--butter)',
+                            color: 'var(--navy)',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '999px',
+                            fontSize: '0.8rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem'
+                          }}
+                        >
+                          {label.name}
+                          <button
+                            onClick={() => handleRemoveLabel(label)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: 'var(--warm-gray)',
+                              padding: 0,
+                              fontSize: '0.75rem',
+                              lineHeight: 1
+                            }}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      placeholder="Add a label..."
+                      value={labelInput}
+                      onChange={(e) => handleLabelInput(e.target.value)}
+                      onBlur={() => setTimeout(() => setShowLabelDropdown(false), 150)}
+                      style={inputStyle}
+                    />
+                    {showLabelDropdown && labelSuggestions.length > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid var(--powder-blue)',
+                        borderTop: 'none',
+                        borderRadius: '0 0 4px 4px',
+                        zIndex: 100,
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                      }}>
+                        {labelSuggestions.map((label) => (
+                          <div
+                            key={label.id}
+                            onMouseDown={() => handleSelectExistingLabel(label)}
+                            style={{
+                              padding: '0.5rem 0.75rem',
+                              cursor: 'pointer',
+                              fontSize: '0.875rem',
+                              color: 'var(--navy)',
+                              borderBottom: '1px solid var(--powder-blue)'
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+                          >
+                            {label.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--warm-gray)', margin: '0.4rem 0 0 0', fontStyle: 'italic' }}>
+                    Select an existing label or type a new one and click Save
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -735,3 +964,4 @@ export default function MovieLibrary() {
     </div>
   )
 }
+      
