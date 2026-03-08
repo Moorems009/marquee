@@ -93,159 +93,92 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
     onClose()
   }
 
-  const viewButtonStyle = (active: boolean): React.CSSProperties => ({
-    padding: '0.4rem 1rem',
-    border: '1px solid var(--powder-blue)',
-    borderRadius: '2px',
-    cursor: 'pointer',
-    fontFamily: 'Georgia, serif',
-    fontSize: '0.875rem',
-    backgroundColor: active ? 'var(--powder-blue)' : 'white',
-    color: 'var(--navy)',
-  })
+  const viewBtnClass = (active: boolean) =>
+    `py-1.5 px-4 border border-powder-blue rounded-sm cursor-pointer font-serif text-sm text-navy ${active ? 'bg-powder-blue' : 'bg-white'}`
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0,0,0,0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 300,
-      }}
+      className="fixed inset-0 bg-[rgba(0,0,0,0.4)] flex items-center justify-center z-300"
       onClick={onClose}
     >
       <div
-        style={{
-          backgroundColor: 'white',
-          border: '1px solid var(--powder-blue)',
-          borderRadius: '4px',
-          padding: '2rem',
-          width: '360px',
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-        }}
+        className="bg-white border border-powder-blue rounded p-8 w-90 max-w-[90vw] max-h-[90vh] overflow-y-auto shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className={sectionHeadingStyle} style={{ marginBottom: '1.5rem' }}>Settings</h2>
+        <h2 className={`${sectionHeadingStyle} mb-6`}>Settings</h2>
 
         {/* Default View */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div className={fieldLabelStyle} style={{ marginBottom: '0.5rem' }}>Default View</div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button style={viewButtonStyle(defaultView === 'list')} onClick={() => setDefaultView('list')}>
+        <div className="mb-6">
+          <div className={`${fieldLabelStyle} mb-2`}>Default View</div>
+          <div className="flex gap-2">
+            <button className={viewBtnClass(defaultView === 'list')} onClick={() => setDefaultView('list')}>
               ☰ List
             </button>
-            <button style={viewButtonStyle(defaultView === 'grid')} onClick={() => setDefaultView('grid')}>
+            <button className={viewBtnClass(defaultView === 'grid')} onClick={() => setDefaultView('grid')}>
               ⊞ Grid
             </button>
           </div>
         </div>
 
         {/* Library Data */}
-        <div style={{ marginBottom: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--powder-blue)' }}>
-          <div className={fieldLabelStyle} style={{ marginBottom: '0.5rem' }}>Library Data</div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--warm-gray)', margin: '0 0 0.75rem 0' }}>
+        <div className="mb-6 pt-6 border-t border-powder-blue">
+          <div className={`${fieldLabelStyle} mb-2`}>Library Data</div>
+          <p className="text-[0.8rem] text-warm-gray mt-0 mb-3">
             Fill in missing TMDB data (poster, director, MPAA rating, genre) for all movies in your library.
           </p>
           <button
             onClick={handleRefreshTMDB}
             disabled={refreshState === 'running'}
-            style={{
-              background: refreshState === 'running' ? 'var(--warm-gray)' : 'var(--powder-blue)',
-              border: 'none',
-              padding: '0.4rem 1rem',
-              cursor: refreshState === 'running' ? 'default' : 'pointer',
-              fontFamily: 'Georgia, serif',
-              fontSize: '0.875rem',
-              color: 'var(--navy)',
-              borderRadius: '2px',
-              opacity: refreshState === 'running' ? 0.7 : 1,
-            }}
+            className={`border-none px-4 py-1.5 cursor-pointer font-serif text-sm text-navy rounded-sm ${refreshState === 'running' ? 'bg-warm-gray opacity-70 cursor-default' : 'bg-powder-blue'}`}
           >
             {refreshState === 'running' ? 'Refreshing…' : 'Refresh TMDB Data'}
           </button>
 
           {refreshProgress && refreshState === 'running' && (
-            <div style={{ marginTop: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--warm-gray)', marginBottom: '0.3rem' }}>
+            <div className="mt-3">
+              <div className="flex justify-between text-[0.75rem] text-warm-gray mb-1">
                 <span>Processing…</span>
                 <span>{refreshProgress.current} / {refreshProgress.total}</span>
               </div>
-              <div style={{ width: '100%', height: '5px', backgroundColor: 'var(--powder-blue)', borderRadius: '999px', overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%',
-                  width: `${refreshProgress.total > 0 ? (refreshProgress.current / refreshProgress.total) * 100 : 0}%`,
-                  backgroundColor: 'var(--mint)',
-                  borderRadius: '999px',
-                  transition: 'width 0.3s ease'
-                }} />
+              <div className="w-full h-1.5 bg-powder-blue rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-mint rounded-full transition-[width] duration-300 ease-in-out"
+                  style={{ width: `${refreshProgress.total > 0 ? (refreshProgress.current / refreshProgress.total) * 100 : 0}%` }}
+                />
               </div>
             </div>
           )}
 
           {refreshSummary && refreshState === 'done' && (
-          <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--warm-gray)' }}>
-            <p style={{ margin: '0 0 0.5rem 0' }}>
-              Done — {refreshSummary.updated} updated · {refreshSummary.skipped} already complete
-              {refreshSummary.notFound.length > 0 && ` · ${refreshSummary.notFound.length} not found on TMDB`}
-            </p>
-            {refreshSummary.notFound.length > 0 && (
-              <div style={{
-                backgroundColor: 'var(--cream)',
-                border: '1px solid var(--powder-blue)',
-                borderRadius: '4px',
-                padding: '0.5rem 0.75rem',
-                maxHeight: '120px',
-                overflowY: 'auto'
-              }}>
-                <div style={{ fontStyle: 'italic', marginBottom: '0.3rem' }}>Not found on TMDB:</div>
-                {refreshSummary.notFound.map((title, i) => (
-                  <div key={i} style={{ color: 'var(--navy)', fontSize: '0.75rem', paddingLeft: '0.5rem' }}>
-                    {title}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            <div className="mt-3 text-[0.8rem] text-warm-gray">
+              <p className="mt-0 mb-2">
+                Done — {refreshSummary.updated} updated · {refreshSummary.skipped} already complete
+                {refreshSummary.notFound.length > 0 && ` · ${refreshSummary.notFound.length} not found on TMDB`}
+              </p>
+              {refreshSummary.notFound.length > 0 && (
+                <div className="bg-cream border border-powder-blue rounded p-3 max-h-30 overflow-y-auto">
+                  <div className="italic mb-1">Not found on TMDB:</div>
+                  {refreshSummary.notFound.map((title, i) => (
+                    <div key={i} className="text-navy text-[0.75rem] pl-2">{title}</div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '2rem' }}>
+        <div className="flex justify-end gap-2 mt-8">
           <button
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: '1px solid var(--powder-blue)',
-              padding: '0.4rem 1rem',
-              cursor: 'pointer',
-              fontFamily: 'Georgia, serif',
-              fontSize: '0.875rem',
-              color: 'var(--warm-gray)',
-              borderRadius: '2px',
-            }}
+            className="bg-transparent border border-powder-blue px-4 py-1.5 cursor-pointer font-serif text-sm text-warm-gray rounded-sm"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{
-              background: 'var(--powder-blue)',
-              border: '1px solid var(--powder-blue)',
-              padding: '0.4rem 1rem',
-              cursor: saving ? 'default' : 'pointer',
-              fontFamily: 'Georgia, serif',
-              fontSize: '0.875rem',
-              color: 'var(--navy)',
-              borderRadius: '2px',
-              opacity: saving ? 0.7 : 1,
-            }}
+            className={`border border-powder-blue px-4 py-1.5 font-serif text-sm text-navy rounded-sm bg-powder-blue ${saving ? 'opacity-70 cursor-default' : 'cursor-pointer'}`}
           >
             {saving ? 'Saving…' : 'Save'}
           </button>

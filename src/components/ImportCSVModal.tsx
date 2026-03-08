@@ -296,53 +296,29 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     return '·'
   }
 
-  const statusColor = (status: ImportStatus) => {
-    if (status === 'done') return 'var(--mint)'
-    if (status === 'error') return 'var(--dusty-rose)'
-    if (status === 'importing') return 'var(--butter)'
-    if (status === 'duplicate') return 'var(--blush)'
-    return 'var(--warm-gray)'
+  const statusClass = (status: ImportStatus) => {
+    if (status === 'done') return 'text-mint'
+    if (status === 'error') return 'text-dusty-rose'
+    if (status === 'importing') return 'text-butter'
+    if (status === 'duplicate') return 'text-blush'
+    return 'text-warm-gray'
   }
 
   return (
     <div
       onClick={onClose}
-      style={{
-        position: 'fixed',
-        top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(44, 62, 107, 0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000
-      }}
+      className="fixed inset-0 bg-[rgba(44,62,107,0.4)] flex items-center justify-center z-1000"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: 'var(--cream)',
-          border: '1px solid var(--powder-blue)',
-          borderRadius: '4px',
-          padding: '2rem',
-          width: '100%',
-          maxWidth: '560px',
-          margin: '1rem',
-          maxHeight: '90vh',
-          overflowY: 'auto'
-        }}
+        className="bg-cream border border-powder-blue rounded p-8 w-full max-w-140 mx-4 max-h-[90vh] overflow-y-auto"
       >
-        <h2 style={{
-          margin: '0 0 1.5rem 0',
-          fontSize: '1.1rem',
-          color: 'var(--dusty-rose)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em'
-        }}>Import CSV</h2>
+        <h2 className="mt-0 mb-6 text-[1.1rem] text-dusty-rose uppercase tracking-widest">Import CSV</h2>
 
         {/* Step 1: File upload */}
         {!isParsed && (
           <div>
-            <p style={{ color: 'var(--warm-gray)', fontSize: '0.875rem', marginBottom: '1rem' }}>
+            <p className="text-warm-gray text-sm mb-4">
               Upload a CSV with columns: <strong>Title, Director, Year, Format, Imprint, Labels</strong>.
               Labels should be separated by semicolons (e.g. <em>Horror;Criterion</em>).
               Valid formats: <strong>4K, Blu-ray, DVD, VHS, Digital</strong>.
@@ -352,52 +328,28 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
               type="file"
               accept=".csv"
               onChange={handleFileUpload}
-              className={inputStyle} style={{ cursor: 'pointer' }}
+              className={inputStyle}
+              style={{ cursor: 'pointer' }}
             />
           </div>
         )}
 
         {/* Step 2: Duplicate resolution */}
         {currentDuplicateIndex !== null && (
-          <div style={{
-            backgroundColor: 'white',
-            border: '1px solid var(--blush)',
-            borderRadius: '4px',
-            padding: '1rem',
-            marginBottom: '1rem'
-          }}>
-            <p style={{ margin: '0 0 0.75rem 0', color: 'var(--navy)', fontSize: '0.875rem' }}>
+          <div className="bg-white border border-blush rounded p-4 mb-4">
+            <p className="text-navy text-sm mb-3 mt-0">
               <strong>{rows[currentDuplicateIndex].row.title}</strong> ({rows[currentDuplicateIndex].row.year}) already exists in your library. What would you like to do?
             </p>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="flex gap-2">
               <button
                 onClick={() => handleDuplicateChoice('skip')}
-                style={{
-                  backgroundColor: 'white',
-                  color: 'var(--warm-gray)',
-                  border: '1px solid var(--warm-gray)',
-                  padding: '0.4rem 1rem',
-                  cursor: 'pointer',
-                  fontFamily: 'Georgia, serif',
-                  borderRadius: '2px',
-                  fontSize: '0.875rem'
-                }}
+                className="bg-white text-warm-gray border border-warm-gray px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm"
               >
                 Skip
               </button>
               <button
                 onClick={() => handleDuplicateChoice('overwrite')}
-                style={{
-                  backgroundColor: 'var(--powder-blue)',
-                  color: 'var(--navy)',
-                  border: 'none',
-                  padding: '0.4rem 1rem',
-                  cursor: 'pointer',
-                  fontFamily: 'Georgia, serif',
-                  borderRadius: '2px',
-                  fontSize: '0.875rem',
-                  fontWeight: 'bold'
-                }}
+                className="bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm font-bold"
               >
                 Overwrite
               </button>
@@ -407,8 +359,8 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
 
         {/* Step 3: Row preview / progress */}
         {isParsed && rows.length > 0 && (
-          <div style={{ marginBottom: '1rem' }}>
-            <p style={{ color: 'var(--warm-gray)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+          <div className="mb-4">
+            <p className="text-warm-gray text-[0.8rem] mb-2">
               {rows.length} movie{rows.length !== 1 ? 's' : ''} found
               {rows.filter(r => r.status === 'duplicate').length > 0 &&
                 ` · ${rows.filter(r => r.status === 'duplicate').length} duplicate${rows.filter(r => r.status === 'duplicate').length !== 1 ? 's' : ''}`
@@ -417,44 +369,26 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
                 ` · ${rows.filter(r => r.warning).length} format warning${rows.filter(r => r.warning).length !== 1 ? 's' : ''}`
               }
             </p>
-            <div style={{
-              border: '1px solid var(--powder-blue)',
-              borderRadius: '4px',
-              overflow: 'hidden',
-              maxHeight: '300px',
-              overflowY: 'auto'
-            }}>
+            <div className="border border-powder-blue rounded overflow-hidden max-h-75 overflow-y-auto">
               {rows.map((r, i) => (
                 <div
                   key={i}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.2rem',
-                    padding: '0.5rem 0.75rem',
-                    backgroundColor: i % 2 === 0 ? 'white' : 'var(--cream)',
-                    borderBottom: '1px solid var(--powder-blue)',
-                    fontSize: '0.8rem'
-                  }}
+                  className={`flex flex-col gap-1 px-3 py-2 border-b border-powder-blue text-[0.8rem] ${i % 2 === 0 ? 'bg-white' : 'bg-cream'}`}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ color: statusColor(r.status), fontWeight: 'bold', width: '12px', textAlign: 'center' }}>
+                  <div className="flex items-center gap-3">
+                    <span className={`font-bold w-3 text-center ${statusClass(r.status)}`}>
                       {statusIcon(r.status)}
                     </span>
-                    <span style={{ color: 'var(--navy)', flex: 1 }}>
+                    <span className="text-navy flex-1">
                       {r.row.title}
-                      {r.row.year && <span style={{ color: 'var(--warm-gray)', marginLeft: '0.4rem' }}>({r.row.year})</span>}
+                      {r.row.year && <span className="text-warm-gray ml-1">({r.row.year})</span>}
                     </span>
                     {r.message && (
-                      <span style={{ color: 'var(--warm-gray)', fontSize: '0.75rem', fontStyle: 'italic' }}>
-                        {r.message}
-                      </span>
+                      <span className="text-warm-gray text-[0.75rem] italic">{r.message}</span>
                     )}
                   </div>
                   {r.warning && (
-                    <div style={{ paddingLeft: '1.5rem', color: 'var(--warm-gray)', fontSize: '0.72rem', fontStyle: 'italic' }}>
-                      ⚠ {r.warning}
-                    </div>
+                    <div className="pl-6 text-warm-gray text-[0.72rem] italic">⚠ {r.warning}</div>
                   )}
                 </div>
               ))}
@@ -464,67 +398,35 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
 
         {/* Progress bar */}
         {progress && (
-          <div style={{ marginBottom: '1rem' }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: '0.75rem',
-              color: 'var(--warm-gray)',
-              marginBottom: '0.4rem'
-            }}>
+          <div className="mb-4">
+            <div className="flex justify-between text-[0.75rem] text-warm-gray mb-1">
               <span>Importing...</span>
               <span>{progress.current} / {progress.total}</span>
             </div>
-            <div style={{
-              width: '100%',
-              height: '6px',
-              backgroundColor: 'var(--powder-blue)',
-              borderRadius: '999px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                height: '100%',
-                width: `${progress.total > 0 ? (progress.current / progress.total) * 100 : 0}%`,
-                backgroundColor: 'var(--mint)',
-                borderRadius: '999px',
-                transition: 'width 0.3s ease'
-              }} />
+            <div className="w-full h-1.5 bg-powder-blue rounded-full overflow-hidden">
+              <div
+                className="h-full bg-mint rounded-full transition-[width] duration-300 ease-in-out"
+                style={{ width: `${progress.total > 0 ? (progress.current / progress.total) * 100 : 0}%` }}
+              />
             </div>
           </div>
         )}
 
         {/* Summary */}
         {summary && (
-          <div style={{
-            backgroundColor: 'white',
-            border: '1px solid var(--powder-blue)',
-            borderRadius: '4px',
-            padding: '1rem',
-            marginBottom: '1rem',
-            fontSize: '0.875rem',
-            color: 'var(--navy)'
-          }}>
+          <div className="bg-white border border-powder-blue rounded p-4 mb-4 text-sm text-navy">
             <strong>Import complete</strong>
-            <p style={{ margin: '0.5rem 0 0 0', color: 'var(--warm-gray)' }}>
+            <p className="text-warm-gray mt-2 mb-0">
               {summary.imported} imported · {summary.skipped} skipped · {summary.errors} errors
             </p>
           </div>
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+        <div className="flex justify-between mt-4">
           <button
             onClick={onClose}
-            style={{
-              backgroundColor: 'white',
-              color: 'var(--warm-gray)',
-              border: '1px solid var(--warm-gray)',
-              padding: '0.5rem 1rem',
-              cursor: 'pointer',
-              fontFamily: 'Georgia, serif',
-              borderRadius: '2px',
-              fontSize: '0.875rem'
-            }}
+            className="bg-white text-warm-gray border border-warm-gray px-4 py-2 cursor-pointer font-serif rounded-sm text-sm"
           >
             {summary ? 'Close' : 'Cancel'}
           </button>
@@ -532,17 +434,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
             <button
               onClick={handleStartImport}
               disabled={isImporting}
-              style={{
-                backgroundColor: isImporting ? 'var(--warm-gray)' : 'var(--powder-blue)',
-                color: 'var(--navy)',
-                border: 'none',
-                padding: '0.5rem 1.5rem',
-                cursor: isImporting ? 'not-allowed' : 'pointer',
-                fontFamily: 'Georgia, serif',
-                borderRadius: '2px',
-                fontSize: '0.875rem',
-                fontWeight: 'bold'
-              }}
+              className={`text-navy border-none px-6 py-2 cursor-pointer font-serif rounded-sm text-sm font-bold ${isImporting ? 'bg-warm-gray cursor-not-allowed' : 'bg-powder-blue'}`}
             >
               {isImporting ? 'Importing...' : 'Import'}
             </button>

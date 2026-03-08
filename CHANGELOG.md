@@ -12,6 +12,17 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.15.0] - 2026-03-08
+
+### chore
+- Convert ImportCSVModal.tsx fully to Tailwind — no inline styles remain (except dynamic progress bar width)
+- Convert statusColor inline style to statusClass Tailwind class function
+- Convert SettingsModal.tsx fully to Tailwind — no inline styles remain (except dynamic progress bar width)
+- Replace viewButtonStyle inline style function with viewBtnClass Tailwind class function
+
+---
+
+
 ## [0.14.0] - 2026-03-08
 
 ### chore
