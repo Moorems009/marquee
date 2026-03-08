@@ -1,6 +1,7 @@
 'use client'
 
 import { Movie, Label } from '@/lib/types'
+import { sectionHeadingStyle } from '@/lib/styles'
 
 type Props = {
   movies: Movie[]
@@ -19,113 +20,57 @@ export default function MovieList({
   onEdit,
   onViewModeChange
 }: Props) {
+  const viewBtnClass = (active: boolean) =>
+    `border border-powder-blue text-navy py-1 px-3 cursor-pointer font-serif rounded-sm text-[0.8rem] ${active ? 'bg-powder-blue' : 'bg-white'}`
+
   return (
     <div>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1rem'
-      }}>
-        <h2 style={{
-          fontSize: '1.1rem',
-          color: 'var(--dusty-rose)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          margin: 0
-        }}>My Library</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button
-            onClick={() => onViewModeChange('list')}
-            style={{
-              backgroundColor: viewMode === 'list' ? 'var(--powder-blue)' : 'white',
-              color: 'var(--navy)',
-              border: '1px solid var(--powder-blue)',
-              padding: '0.3rem 0.75rem',
-              cursor: 'pointer',
-              fontFamily: 'Georgia, serif',
-              borderRadius: '2px',
-              fontSize: '0.8rem'
-            }}
-          >
+      <div className="flex justify-between items-center mb-4">
+        <h2 className={sectionHeadingStyle}>My Library</h2>
+        <div className="flex gap-2">
+          <button onClick={() => onViewModeChange('list')} className={viewBtnClass(viewMode === 'list')}>
             ☰ List
           </button>
-          <button
-            onClick={() => onViewModeChange('grid')}
-            style={{
-              backgroundColor: viewMode === 'grid' ? 'var(--powder-blue)' : 'white',
-              color: 'var(--navy)',
-              border: '1px solid var(--powder-blue)',
-              padding: '0.3rem 0.75rem',
-              cursor: 'pointer',
-              fontFamily: 'Georgia, serif',
-              borderRadius: '2px',
-              fontSize: '0.8rem'
-            }}
-          >
+          <button onClick={() => onViewModeChange('grid')} className={viewBtnClass(viewMode === 'grid')}>
             ⊞ Grid
           </button>
         </div>
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--warm-gray)' }}>Loading...</p>
+        <p className="text-warm-gray">Loading...</p>
       ) : movies.length === 0 ? (
-        <p style={{ color: 'var(--warm-gray)', fontStyle: 'italic' }}>No movies yet. Add some!</p>
+        <p className="text-warm-gray italic">No movies yet. Add some!</p>
       ) : viewMode === 'list' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="flex flex-col gap-2">
           {movies.map((movie) => (
             <div
               key={movie.id}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.75rem 1rem',
-                backgroundColor: 'white',
-               borderTop: '1px solid var(--powder-blue)',
-                borderRight: '1px solid var(--powder-blue)',
-                borderBottom: '1px solid var(--powder-blue)',
-                borderLeft: '4px solid var(--blush)',
-                borderRadius: '4px',
-              }}
+              className="flex justify-between items-center py-3 px-4 bg-white border border-powder-blue border-l-4 border-l-blush rounded"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 {movie.poster_url && (
                   <img
                     src={movie.poster_url}
                     alt={movie.title}
-                    style={{ width: '32px', height: '48px', objectFit: 'cover', borderRadius: '2px' }}
+                    className="w-8 h-12 object-cover rounded-sm flex-shrink-0"
                   />
                 )}
-                <div>
-                  <span style={{ fontWeight: 'bold', color: 'var(--navy)' }}>{movie.title}</span>
-                  <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem', fontSize: '0.875rem' }}>
-                    ({movie.year})
-                  </span>
+                <div className="min-w-0">
+                  <span className="font-bold text-navy">{movie.title}</span>
+                  <span className="text-warm-gray ml-2 text-sm">({movie.year})</span>
                   {movie.director && (
-                    <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem', fontSize: '0.875rem' }}>
-                      — {movie.director}
-                    </span>
+                    <span className="text-warm-gray ml-2 text-sm">— {movie.director}</span>
                   )}
                   {movie.genre && (
-                    <div style={{ fontSize: '0.75rem', color: 'var(--warm-gray)', fontStyle: 'italic', marginTop: '0.1rem' }}>
-                      {movie.genre}
-                    </div>
+                    <div className="text-xs text-warm-gray italic mt-0.5">{movie.genre}</div>
                   )}
                   {movieLabels[movie.id]?.length > 0 && (
-                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
+                    <div className="flex gap-1 flex-wrap mt-1">
                       {movieLabels[movie.id].map((label) => (
                         <span
                           key={label.id}
-                          style={{
-                            backgroundColor: 'var(--butter)',
-                            color: 'var(--navy)',
-                            padding: '0.1rem 0.5rem',
-                            borderRadius: '999px',
-                            fontSize: '0.7rem',
-                            fontFamily: 'Georgia, serif'
-                          }}
+                          className="bg-butter text-navy px-2 py-0.5 rounded-full text-[0.7rem] font-serif"
                         >
                           {label.name}
                         </span>
@@ -134,57 +79,23 @@ export default function MovieList({
                   )}
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{
-                  fontSize: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: 'white',
-                  backgroundColor: 'var(--mint)',
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: '2px',
-                  whiteSpace: 'nowrap'
-                }}>
+              <div className="flex items-center gap-2 flex-shrink-0 ml-3 flex-wrap justify-end">
+                <span className="text-xs uppercase tracking-wide text-white bg-mint px-2 py-0.5 rounded-sm whitespace-nowrap">
                   {movie.format}
                 </span>
                 {movie.imprint && (
-                  <span style={{
-                    fontSize: '0.75rem',
-                    fontStyle: 'italic',
-                    color: 'var(--navy)',
-                    backgroundColor: 'var(--powder-blue)',
-                    padding: '0.2rem 0.6rem',
-                    borderRadius: '2px',
-                    whiteSpace: 'nowrap'
-                  }}>
+                  <span className="text-xs italic text-navy bg-powder-blue px-2 py-0.5 rounded-sm whitespace-nowrap">
                     {movie.imprint}
                   </span>
                 )}
                 {movie.mpaa_rating && (
-                  <span style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--navy)',
-                    border: '1px solid var(--warm-gray)',
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '2px',
-                    whiteSpace: 'nowrap',
-                    fontFamily: 'Georgia, serif'
-                  }}>
+                  <span className="text-xs text-navy border border-warm-gray px-2 py-0.5 rounded-sm whitespace-nowrap font-serif">
                     {movie.mpaa_rating}
                   </span>
                 )}
                 <button
                   onClick={() => onEdit(movie)}
-                  style={{
-                    background: 'none',
-                    border: '1px solid var(--powder-blue)',
-                    color: 'var(--warm-gray)',
-                    padding: '0.2rem 0.6rem',
-                    cursor: 'pointer',
-                    fontFamily: 'Georgia, serif',
-                    borderRadius: '2px',
-                    fontSize: '0.75rem'
-                  }}
+                  className="bg-transparent border border-powder-blue text-warm-gray px-2 py-0.5 cursor-pointer font-serif rounded-sm text-xs"
                 >
                   Edit
                 </button>
@@ -193,113 +104,52 @@ export default function MovieList({
           ))}
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-          gap: '1rem'
-        }}>
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
           {movies.map((movie) => (
             <div
               key={movie.id}
               onClick={() => onEdit(movie)}
-              style={{
-                cursor: 'pointer',
-                borderRadius: '4px',
-                overflow: 'hidden',
-                border: '1px solid var(--powder-blue)',
-                backgroundColor: 'white',
-                transition: 'transform 0.1s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.03)')}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+              className="cursor-pointer rounded overflow-hidden border border-powder-blue bg-white transition-transform duration-100 hover:scale-[1.03]"
             >
               {movie.poster_url ? (
                 <img
                   src={movie.poster_url}
                   alt={movie.title}
-                  style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
+                  className="w-full object-cover block"
+                  style={{ aspectRatio: '2/3' }}
                 />
               ) : (
-                <div style={{
-                  width: '100%',
-                  aspectRatio: '2/3',
-                  backgroundColor: 'var(--cream)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0.5rem',
-                  textAlign: 'center'
-                }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--warm-gray)', fontStyle: 'italic' }}>
-                    {movie.title}
-                  </span>
+                <div
+                  className="w-full bg-cream flex items-center justify-center p-2 text-center"
+                  style={{ aspectRatio: '2/3' }}
+                >
+                  <span className="text-[0.8rem] text-warm-gray italic">{movie.title}</span>
                 </div>
               )}
-              <div style={{ padding: '0.5rem' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--navy)', marginBottom: '0.2rem' }}>
-                  {movie.title}
-                </div>
-                <div style={{
-                  fontSize: '0.65rem',
-                  textTransform: 'uppercase',
-                  color: 'white',
-                  backgroundColor: 'var(--mint)',
-                  padding: '0.1rem 0.4rem',
-                  borderRadius: '2px',
-                  display: 'inline-block'
-                }}>
+              <div className="p-2">
+                <div className="text-[0.75rem] font-bold text-navy mb-0.5">{movie.title}</div>
+                <span className="text-[0.65rem] uppercase text-white bg-mint px-1.5 py-0.5 rounded-sm inline-block">
                   {movie.format}
-                </div>
+                </span>
                 {movie.imprint && (
-                  <div style={{
-                    fontSize: '0.65rem',
-                    fontStyle: 'italic',
-                    color: 'var(--navy)',
-                    backgroundColor: 'var(--powder-blue)',
-                    padding: '0.1rem 0.4rem',
-                    borderRadius: '2px',
-                    display: 'inline-block',
-                    marginLeft: '0.25rem'
-                  }}>
+                  <span className="text-[0.65rem] italic text-navy bg-powder-blue px-1.5 py-0.5 rounded-sm inline-block ml-1">
                     {movie.imprint}
-                  </div>
+                  </span>
                 )}
                 {movie.mpaa_rating && (
-                  <div style={{
-                    fontSize: '0.65rem',
-                    color: 'var(--navy)',
-                    border: '1px solid var(--warm-gray)',
-                    padding: '0.1rem 0.4rem',
-                    borderRadius: '2px',
-                    display: 'inline-block',
-                    marginLeft: '0.25rem',
-                    fontFamily: 'Georgia, serif'
-                  }}>
+                  <span className="text-[0.65rem] text-navy border border-warm-gray px-1.5 py-0.5 rounded-sm inline-block ml-1 font-serif">
                     {movie.mpaa_rating}
-                  </div>
+                  </span>
                 )}
                 {movie.genre && (
-                  <div style={{
-                    fontSize: '0.65rem',
-                    color: 'var(--warm-gray)',
-                    fontStyle: 'italic',
-                    marginTop: '0.25rem'
-                  }}>
-                    {movie.genre}
-                  </div>
+                  <div className="text-[0.65rem] text-warm-gray italic mt-1">{movie.genre}</div>
                 )}
                 {movieLabels[movie.id]?.length > 0 && (
-                  <div style={{ display: 'flex', gap: '0.2rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
+                  <div className="flex gap-1 flex-wrap mt-1">
                     {movieLabels[movie.id].map((label) => (
                       <span
                         key={label.id}
-                        style={{
-                          backgroundColor: 'var(--butter)',
-                          color: 'var(--navy)',
-                          padding: '0.1rem 0.4rem',
-                          borderRadius: '999px',
-                          fontSize: '0.6rem'
-                        }}
+                        className="bg-butter text-navy px-1.5 py-0.5 rounded-full text-[0.6rem]"
                       >
                         {label.name}
                       </span>

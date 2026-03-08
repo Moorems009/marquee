@@ -12,6 +12,16 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.13.0] - 2026-03-08
+
+### chore
+- Convert MovieList.tsx fully to Tailwind — no inline styles remain (except aspect-ratio and auto-fill grid which lack direct Tailwind equivalents)
+- Replace JS onMouseEnter/Leave scale handler on grid cards with Tailwind hover:scale-[1.03]
+- Left accent border on list rows uses border-l-4 border-l-blush alongside border border-powder-blue
+
+---
+
+
 ## [0.12.0] - 2026-03-08
 
 ### chore
