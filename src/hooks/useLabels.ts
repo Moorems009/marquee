@@ -21,16 +21,25 @@ export function useLabels() {
   }
 
   async function fetchMovieLabels() {
-    const { data, error } = await supabase
-      .from('movie_labels')
-      .select('movie_id, labels(id, name)')
+    const { data: authData } = await supabase.auth.getUser()
+    const user = authData.user
 
-    if (!error && data) {
+    const [{ data: mlData, error: mlError }, { data: lData, error: lError }] = await Promise.all([
+      supabase.from('movie_labels').select('movie_id, label_id'),
+      supabase.from('labels').select('id, name').eq('user_id', user?.id)
+    ])
+
+    if (!mlError && !lError && mlData && lData) {
+      const labelById: Record<string, Label> = {}
+      lData.forEach((l: Label) => { labelById[l.id] = l })
+
       const map: Record<string, Label[]> = {}
-      data.forEach((row: { movie_id: string; labels: Label | Label[] }) => {
-        if (!map[row.movie_id]) map[row.movie_id] = []
-        const label = Array.isArray(row.labels) ? row.labels[0] : row.labels
-        if (label) map[row.movie_id].push(label)
+      mlData.forEach((row: { movie_id: string; label_id: string }) => {
+        const label = labelById[row.label_id]
+        if (label) {
+          if (!map[row.movie_id]) map[row.movie_id] = []
+          map[row.movie_id].push(label)
+        }
       })
       setMovieLabels(map)
     }

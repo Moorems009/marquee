@@ -12,6 +12,17 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.27.0] - 2026-03-08
+
+### fix
+- Fix label filtering returning no results (useLabels.ts)
+  - `fetchMovieLabels` was using a Supabase embedded join (`labels(id, name)`) which silently failed if the FK relationship wasn't recognized by PostgREST, leaving `movieLabels` as `{}` permanently
+  - Labels appeared in the edit modal via optimistic state updates but were never persisted to the `movieLabels` map used by the filter
+  - Replaced with two parallel plain queries (`movie_labels` + `labels`) and a client-side join by label ID — no embedded join, no silent failure
+
+---
+
+
 ## [0.26.0] - 2026-03-08
 
 ### feat
