@@ -1,10 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import { Movie, Label } from '@/lib/types'
-import { sectionHeadingStyle } from '@/lib/styles'
+import { sectionHeadingStyle, inputStyle } from '@/lib/styles'
+
+type SortKey = 'title-asc' | 'title-desc' | 'year-desc' | 'year-asc' | 'director' | 'format' | 'genre' | 'rating'
 
 type Props = {
   movies: Movie[]
+  labels: Label[]
   loading: boolean
   viewMode: 'list' | 'grid'
   movieLabels: Record<string, Label[]>
@@ -14,20 +18,72 @@ type Props = {
 
 export default function MovieList({
   movies,
+  labels,
   loading,
   viewMode,
   movieLabels,
   onEdit,
   onViewModeChange
 }: Props) {
+  const [search, setSearch] = useState('')
+  const [filterFormat, setFilterFormat] = useState('')
+  const [filterLabel, setFilterLabel] = useState('')
+  const [sortBy, setSortBy] = useState<SortKey>('title-asc')
+  const [showFilters, setShowFilters] = useState(false)
+
+  const activeFilterCount = [search.trim(), filterFormat, filterLabel].filter(Boolean).length
+
+  const filteredMovies = movies.filter((movie) => {
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      if (!movie.title.toLowerCase().includes(q) && !(movie.director?.toLowerCase().includes(q))) return false
+    }
+    if (filterFormat && movie.format !== filterFormat) return false
+    if (filterLabel) {
+      const ids = (movieLabels[movie.id] || []).map((l) => l.id)
+      if (!ids.includes(filterLabel)) return false
+    }
+    return true
+  })
+
+  const sortedMovies = [...filteredMovies].sort((a, b) => {
+    switch (sortBy) {
+      case 'title-asc':  return a.title.localeCompare(b.title)
+      case 'title-desc': return b.title.localeCompare(a.title)
+      case 'year-desc':  return (b.year || 0) - (a.year || 0)
+      case 'year-asc':   return (a.year || 0) - (b.year || 0)
+      case 'director': {
+        const lastName = (d: string | null | undefined) => d ? (d.split(' ').pop() || d) : 'ZZZZ'
+        return lastName(a.director).localeCompare(lastName(b.director))
+      }
+      case 'format':     return a.format.localeCompare(b.format)
+      case 'genre':      return (a.genre || '').localeCompare(b.genre || '')
+      case 'rating':     return (a.mpaa_rating || 'ZZ').localeCompare(b.mpaa_rating || 'ZZ')
+      default:           return 0
+    }
+  })
+
+  const selectClass = 'py-2 px-3 border border-powder-blue rounded-sm font-serif bg-cream text-navy text-sm'
+
   const viewBtnClass = (active: boolean) =>
     `border border-powder-blue text-navy py-1 px-3 cursor-pointer font-serif rounded-sm text-[0.8rem] ${active ? 'bg-powder-blue' : 'bg-white'}`
+
+  const filterBtnClass = showFilters
+    ? 'border border-powder-blue bg-powder-blue text-navy py-1 px-3 cursor-pointer font-serif rounded-sm text-[0.8rem]'
+    : activeFilterCount > 0
+      ? 'border border-dusty-rose text-dusty-rose bg-white py-1 px-3 cursor-pointer font-serif rounded-sm text-[0.8rem]'
+      : 'border border-powder-blue text-warm-gray bg-white py-1 px-3 cursor-pointer font-serif rounded-sm text-[0.8rem]'
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className={sectionHeadingStyle}>My Library</h2>
         <div className="flex gap-2">
+          {!loading && movies.length > 0 && (
+            <button onClick={() => setShowFilters((v) => !v)} className={filterBtnClass}>
+              {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+            </button>
+          )}
           <button onClick={() => onViewModeChange('list')} className={viewBtnClass(viewMode === 'list')}>
             ☰ List
           </button>
@@ -37,13 +93,67 @@ export default function MovieList({
         </div>
       </div>
 
+      {/* Collapsible filter + sort bar */}
+      {showFilters && !loading && movies.length > 0 && (
+        <div className="border border-powder-blue rounded bg-white p-3 mb-4 flex flex-col gap-2">
+          <div className="flex flex-col gap-2 md:flex-row">
+            <input
+              type="text"
+              placeholder="Search title or director…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={`${inputStyle} flex-1 min-w-0`}
+            />
+            <select value={filterFormat} onChange={(e) => setFilterFormat(e.target.value)} className={selectClass}>
+              <option value="">All formats</option>
+              <option>4K</option>
+              <option>Blu-ray</option>
+              <option>DVD</option>
+              <option>VHS</option>
+              <option>Digital</option>
+            </select>
+            {labels.length > 0 && (
+              <select value={filterLabel} onChange={(e) => setFilterLabel(e.target.value)} className={selectClass}>
+                <option value="">All labels</option>
+                {labels.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            )}
+          </div>
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-warm-gray uppercase tracking-wider">Sort</span>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)} className={selectClass}>
+                <option value="title-asc">Title A→Z</option>
+                <option value="title-desc">Title Z→A</option>
+                <option value="year-desc">Year (newest)</option>
+                <option value="year-asc">Year (oldest)</option>
+                <option value="director">Director A→Z</option>
+                <option value="format">Format A→Z</option>
+                <option value="genre">Genre A→Z</option>
+                <option value="rating">Rating A→Z</option>
+              </select>
+            </div>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={() => { setSearch(''); setFilterFormat(''); setFilterLabel('') }}
+                className="text-sm text-warm-gray bg-transparent border-none cursor-pointer font-serif underline whitespace-nowrap"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-warm-gray">Loading...</p>
       ) : movies.length === 0 ? (
         <p className="text-warm-gray italic">No movies yet. Add some!</p>
+      ) : sortedMovies.length === 0 ? (
+        <p className="text-warm-gray italic">No movies match your filters.</p>
       ) : viewMode === 'list' ? (
         <div className="flex flex-col gap-2">
-          {movies.map((movie) => (
+          {sortedMovies.map((movie) => (
             <div
               key={movie.id}
               className="flex justify-between items-center py-3 px-4 bg-white border border-powder-blue border-l-4 border-l-blush rounded"
@@ -105,7 +215,7 @@ export default function MovieList({
         </div>
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
-          {movies.map((movie) => (
+          {sortedMovies.map((movie) => (
             <div
               key={movie.id}
               onClick={() => onEdit(movie)}

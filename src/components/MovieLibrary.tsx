@@ -40,9 +40,14 @@ export default function MovieLibrary() {
     init()
   }, [])
 
+  const VALID_FORMATS = ['4K', 'Blu-ray', 'DVD', 'VHS', 'Digital']
+
   function openEdit(movie: Movie) {
     setEditMovie(movie)
-    setEditData({ ...movie })
+    setEditData({
+      ...movie,
+      format: VALID_FORMATS.includes(movie.format) ? movie.format : 'Blu-ray'
+    })
     setEditMovieLabels(movieLabels[movie.id] || [])
   }
 
@@ -132,6 +137,7 @@ export default function MovieLibrary() {
       <ErrorBoundary>
         <MovieList
           movies={movies}
+          labels={labels}
           loading={loading}
           viewMode={viewMode}
           movieLabels={movieLabels}

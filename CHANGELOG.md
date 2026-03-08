@@ -12,6 +12,23 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.17.0] - 2026-03-08
+
+### feat
+- Add collapsible search, filter, and sort panel to movie library (MovieList.tsx)
+  - Search by title or director (text input)
+  - Filter by format (dropdown) and label (dropdown)
+  - Sort by title (A→Z / Z→A), year (newest / oldest), director (by last name), format, genre, rating
+  - Filter button shows active filter count with dusty-rose accent when filters are applied
+  - "Clear filters" button resets all filters
+  - "No movies match your filters." shown when filters return no results
+
+### fix
+- Normalize movie format on edit modal open (MovieLibrary.tsx) — movies with non-standard format strings (e.g. "Blu Ray") now default to "Blu-ray" so the format dropdown saves correctly
+
+---
+
+
 ## [0.16.0] - 2026-03-08
 
 ### chore
