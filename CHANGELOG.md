@@ -12,6 +12,33 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.23.0] - 2026-03-08
+
+### feat
+- Add Now Playing marquee section above the Add Movie form
+  - Displays up to 3 user-selected movies in a theater marquee layout
+  - White sign board with dusty-rose neon strips top/bottom, butter-yellow bulb row at bottom
+  - 3 equal panels side by side; each shows title (bold navy) + year/director (italic warm-gray)
+  - Empty slots show dash placeholders
+  - "Now Playing" header in italic dusty-rose above the sign
+  - Pinned via "Now Playing" button in the Edit modal; "Remove from Now Playing" when active
+  - Button disabled when all 3 slots are filled and the movie is not already pinned
+  - Persisted to `user_metadata.settings.nowPlaying` (array of movie IDs); restored on page load
+
+---
+
+
+## [0.22.0] - 2026-03-08
+
+### feat
+- Remove "Default View" setting from Settings modal
+  - View mode (list/grid) now auto-persists on every toggle — no explicit save required
+  - `handleViewModeChange` writes to `user_metadata.settings.defaultView` on each toggle
+  - Settings modal `UserSettings` type reduced to `{ nightMode: boolean }`
+
+---
+
+
 ## [0.21.0] - 2026-03-08
 
 ### feat

@@ -7,7 +7,6 @@ import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPoster
 import { Movie } from '@/lib/types'
 
 type UserSettings = {
-  defaultView: 'list' | 'grid'
   nightMode: boolean
 }
 
@@ -21,7 +20,6 @@ type Props = {
 
 export default function SettingsModal({ currentSettings, movies, onClose, onSave, onRefreshComplete }: Props) {
   const supabase = createClient()
-  const [defaultView, setDefaultView] = useState<'list' | 'grid'>(currentSettings.defaultView)
   const [nightMode, setNightMode] = useState(currentSettings.nightMode)
   const [saving, setSaving] = useState(false)
   const [refreshState, setRefreshState] = useState<'idle' | 'running' | 'done'>('idle')
@@ -88,15 +86,14 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
 
   async function handleSave() {
     setSaving(true)
-    const settings: UserSettings = { defaultView, nightMode }
-    await supabase.auth.updateUser({ data: { settings } })
+    const { data: authData } = await supabase.auth.getUser()
+    const existing = authData.user?.user_metadata?.settings || {}
+    const settings: UserSettings = { nightMode }
+    await supabase.auth.updateUser({ data: { settings: { ...existing, ...settings } } })
     onSave(settings)
     setSaving(false)
     onClose()
   }
-
-  const viewBtnClass = (active: boolean) =>
-    `py-1.5 px-4 border border-powder-blue rounded-sm cursor-pointer font-serif text-sm text-navy ${active ? 'bg-powder-blue' : 'bg-white'}`
 
   return (
     <div
@@ -109,21 +106,8 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
       >
         <h2 className={`${sectionHeadingStyle} mb-6`}>Settings</h2>
 
-        {/* Default View */}
-        <div className="mb-6">
-          <div className={`${fieldLabelStyle} mb-2`}>Default View</div>
-          <div className="flex gap-2">
-            <button className={viewBtnClass(defaultView === 'list')} onClick={() => setDefaultView('list')}>
-              ☰ List
-            </button>
-            <button className={viewBtnClass(defaultView === 'grid')} onClick={() => setDefaultView('grid')}>
-              ⊞ Grid
-            </button>
-          </div>
-        </div>
-
         {/* Mann Mode */}
-        <div className="mb-6 pt-6 border-t border-powder-blue">
+        <div className="mb-6">
           <div className={`${fieldLabelStyle} mb-2`}>Mann Mode</div>
           <label
             style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', minHeight: '44px' }}

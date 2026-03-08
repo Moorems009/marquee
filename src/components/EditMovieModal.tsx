@@ -10,11 +10,13 @@ type Props = {
   editData: Partial<Movie>
   editMovieLabels: Label[]
   labels: Label[]
+  nowPlayingIds: string[]
   onClose: () => void
   onSave: (updates: Partial<Movie>, newLabelName: string) => Promise<void>
   onDelete: () => Promise<void>
   onSelectExistingLabel: (label: Label) => Promise<void>
   onRemoveLabel: (label: Label) => Promise<void>
+  onToggleNowPlaying: (movieId: string) => void
   setEditData: (data: Partial<Movie>) => void
 }
 
@@ -23,11 +25,13 @@ export default function EditMovieModal({
   editData,
   editMovieLabels,
   labels,
+  nowPlayingIds,
   onClose,
   onSave,
   onDelete,
   onSelectExistingLabel,
   onRemoveLabel,
+  onToggleNowPlaying,
   setEditData
 }: Props) {
   const [labelInput, setLabelInput] = useState('')
@@ -267,12 +271,34 @@ export default function EditMovieModal({
         </div>
 
         <div className="flex justify-between mt-6">
-          <button
-            onClick={onDelete}
-            className="bg-white text-dusty-rose border border-dusty-rose px-4 py-2 cursor-pointer font-serif rounded-sm text-sm"
-          >
-            Delete
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onDelete}
+              className="bg-white text-dusty-rose border border-dusty-rose px-4 py-2 cursor-pointer font-serif rounded-sm text-sm"
+            >
+              Delete
+            </button>
+            {(() => {
+              const isNowPlaying = nowPlayingIds.includes(movie.id)
+              const isFull = nowPlayingIds.length >= 3
+              const disabled = !isNowPlaying && isFull
+              return (
+                <button
+                  onClick={() => !disabled && onToggleNowPlaying(movie.id)}
+                  className={`border px-4 py-2 font-serif rounded-sm text-sm ${
+                    isNowPlaying
+                      ? 'bg-white border-warm-gray text-warm-gray cursor-pointer'
+                      : disabled
+                      ? 'bg-white border-powder-blue text-powder-blue cursor-default opacity-50'
+                      : 'bg-white border-mint text-navy cursor-pointer'
+                  }`}
+                  title={disabled ? 'Now Playing is full (3 max)' : undefined}
+                >
+                  {isNowPlaying ? 'Remove from Now Playing' : 'Now Playing'}
+                </button>
+              )
+            })()}
+          </div>
           <div className="flex gap-2">
             <button
               onClick={onClose}

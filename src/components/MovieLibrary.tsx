@@ -11,6 +11,7 @@ import MovieList from './MovieList'
 import EditMovieModal from './EditMovieModal'
 import ImportCSVModal from './ImportCSVModal'
 import SettingsModal from './SettingsModal'
+import NowPlayingMarquee from './NowPlayingMarquee'
 import ErrorBoundary from './ErrorBoundary'
 
 export default function MovieLibrary() {
@@ -28,6 +29,7 @@ export default function MovieLibrary() {
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [nightMode, setNightMode] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [nowPlayingIds, setNowPlayingIds] = useState<string[]>([])
 
   useEffect(() => {
     async function init() {
@@ -37,6 +39,7 @@ export default function MovieLibrary() {
       if (saved?.defaultView === 'grid' || saved?.defaultView === 'list') setViewMode(saved.defaultView)
       if (saved?.nightMode === true) setNightMode(true)
       if (!saved?.hasSeenWelcome) setShowWelcome(true)
+      if (Array.isArray(saved?.nowPlaying)) setNowPlayingIds(saved.nowPlaying)
       fetchMovies()
       fetchLabels()
       fetchMovieLabels()
@@ -44,11 +47,31 @@ export default function MovieLibrary() {
     init()
   }, [])
 
+  async function handleViewModeChange(mode: 'list' | 'grid') {
+    setViewMode(mode)
+    const { data: authData } = await supabase.auth.getUser()
+    const existing = authData.user?.user_metadata?.settings || {}
+    await supabase.auth.updateUser({ data: { settings: { ...existing, defaultView: mode } } })
+  }
+
   async function dismissWelcome() {
     setShowWelcome(false)
     const { data: authData } = await supabase.auth.getUser()
     const existing = authData.user?.user_metadata?.settings || {}
     await supabase.auth.updateUser({ data: { settings: { ...existing, hasSeenWelcome: true } } })
+  }
+
+  async function handleToggleNowPlaying(movieId: string) {
+    const { data: authData } = await supabase.auth.getUser()
+    const existing = authData.user?.user_metadata?.settings || {}
+    const current: string[] = existing.nowPlaying || []
+    const updated = current.includes(movieId)
+      ? current.filter((id: string) => id !== movieId)
+      : current.length < 3
+      ? [...current, movieId]
+      : current
+    await supabase.auth.updateUser({ data: { settings: { ...existing, nowPlaying: updated } } })
+    setNowPlayingIds(updated)
   }
 
   const VALID_FORMATS = ['4K', 'Blu-ray', 'DVD', 'VHS', 'Digital']
@@ -171,6 +194,8 @@ export default function MovieLibrary() {
         </div>
       )}
 
+      <NowPlayingMarquee movies={movies} nowPlayingIds={nowPlayingIds} />
+
       <ErrorBoundary>
         <AddMovieForm movies={movies} onMovieAdded={fetchMovies} />
       </ErrorBoundary>
@@ -183,7 +208,7 @@ export default function MovieLibrary() {
           viewMode={viewMode}
           movieLabels={movieLabels}
           onEdit={openEdit}
-          onViewModeChange={setViewMode}
+          onViewModeChange={handleViewModeChange}
         />
       </ErrorBoundary>
 
@@ -194,9 +219,11 @@ export default function MovieLibrary() {
             editData={editData}
             editMovieLabels={editMovieLabels}
             labels={labels}
+            nowPlayingIds={nowPlayingIds}
             onClose={closeEdit}
             onSave={handleSave}
             onDelete={handleDelete}
+            onToggleNowPlaying={handleToggleNowPlaying}
             onSelectExistingLabel={async (label) => {
               await addLabelToMovie(editMovie.id, label.id)
               setEditMovieLabels([...editMovieLabels, label])
@@ -212,10 +239,10 @@ export default function MovieLibrary() {
       {showSettingsModal && (
         <ErrorBoundary onReset={() => setShowSettingsModal(false)}>
           <SettingsModal
-            currentSettings={{ defaultView: viewMode, nightMode }}
+            currentSettings={{ nightMode }}
             movies={movies}
             onClose={() => setShowSettingsModal(false)}
-            onSave={(settings) => { setViewMode(settings.defaultView); setNightMode(settings.nightMode) }}
+            onSave={(settings) => setNightMode(settings.nightMode)}
             onRefreshComplete={fetchMovies}
           />
         </ErrorBoundary>
