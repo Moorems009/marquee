@@ -83,123 +83,40 @@ export default function MovieLibrary() {
   }
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
+    <div className="max-w-[900px] mx-auto px-4 py-6 md:px-8 md:py-8">
 
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '2px solid var(--powder-blue)',
-        paddingBottom: '1rem',
-        marginBottom: '2rem',
-        position: 'relative'
-      }}>
-        <h1 style={{
-          fontSize: '2.5rem',
-          fontStyle: 'italic',
-          color: 'var(--navy)',
-          margin: 0
-        }}>Marquee</h1>
+      <div className="flex justify-between items-center border-b-2 border-powder-blue pb-4 mb-8 relative">
+        <h1 className="text-4xl italic text-navy m-0">Marquee</h1>
 
-        <div style={{ position: 'relative' }}>
+        <div className="relative">
           <button
             onClick={() => setShowSettingsMenu((prev) => !prev)}
-            style={{
-              background: 'none',
-              border: '1px solid var(--powder-blue)',
-              color: 'var(--navy)',
-              padding: '0.4rem 0.75rem',
-              cursor: 'pointer',
-              fontFamily: 'Georgia, serif',
-              borderRadius: '2px',
-              fontSize: '1.1rem',
-              lineHeight: 1
-            }}
+            className="bg-transparent border border-powder-blue text-navy px-3 py-1.5 cursor-pointer font-serif rounded-sm text-[1.1rem] leading-none"
           >
             ⚙
           </button>
 
           {showSettingsMenu && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 0.5rem)',
-                right: 0,
-                backgroundColor: 'white',
-                border: '1px solid var(--powder-blue)',
-                borderRadius: '4px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                zIndex: 200,
-                minWidth: '180px',
-                overflow: 'hidden'
-              }}
-            >
-              <div style={{
-                padding: '0.6rem 1rem',
-                borderBottom: '1px solid var(--powder-blue)',
-                fontSize: '0.75rem',
-                color: 'var(--warm-gray)',
-                fontStyle: 'italic'
-              }}>
+            <div className="absolute top-[calc(100%+0.5rem)] right-0 bg-white border border-powder-blue rounded shadow-lg z-[200] min-w-[180px] overflow-hidden">
+              <div className="px-4 py-2 border-b border-powder-blue text-xs text-warm-gray italic">
                 {userEmail}
               </div>
               <button
                 onClick={() => { setShowSettingsMenu(false); setShowSettingsModal(true) }}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: '1px solid var(--powder-blue)',
-                  padding: '0.6rem 1rem',
-                  cursor: 'pointer',
-                  fontFamily: 'Georgia, serif',
-                  fontSize: '0.875rem',
-                  color: 'var(--navy)'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+                className="block w-full text-left bg-transparent border-none border-b border-powder-blue px-4 py-2 cursor-pointer font-serif text-sm text-navy hover:bg-cream"
               >
                 Settings
               </button>
               <button
                 onClick={() => { setShowSettingsMenu(false); setShowImportModal(true) }}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: '1px solid var(--powder-blue)',
-                  padding: '0.6rem 1rem',
-                  cursor: 'pointer',
-                  fontFamily: 'Georgia, serif',
-                  fontSize: '0.875rem',
-                  color: 'var(--navy)'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+                className="block w-full text-left bg-transparent border-none border-b border-powder-blue px-4 py-2 cursor-pointer font-serif text-sm text-navy hover:bg-cream"
               >
                 Import CSV
               </button>
               <button
                 onClick={handleSignOut}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  background: 'none',
-                  border: 'none',
-                  padding: '0.6rem 1rem',
-                  cursor: 'pointer',
-                  fontFamily: 'Georgia, serif',
-                  fontSize: '0.875rem',
-                  color: 'var(--dusty-rose)'
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+                className="block w-full text-left bg-transparent border-none px-4 py-2 cursor-pointer font-serif text-sm text-dusty-rose hover:bg-cream"
               >
                 Sign Out
               </button>

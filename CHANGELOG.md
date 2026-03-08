@@ -11,14 +11,13 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
-## [0.10.0] - 2026-03-08
+
+## [0.11.0] - 2026-03-08
 
 ### chore
-- Add Tailwind CSS v4 to the project (already present as a dependency; activated via  in globals.css)
-- Register design tokens in a  block so the full color palette and Georgia serif font are available as Tailwind utilities (e.g. , , , )
-- Add  to suppress the built-in CSS linter warning for Tailwind v4  at-rule
-- Convert  from inline style objects to Tailwind class strings (, , )
-- Update , , , and  to apply shared styles via  instead of ; remaining per-element overrides stay as inline styles
+- Convert MovieLibrary.tsx fully to Tailwind — no inline styles remain
+- Replace JS onMouseEnter/Leave hover handlers with Tailwind hover: classes
+- Add responsive outer padding (px-4 py-6 on mobile, px-8 py-8 on md+)
 
 ---
 
