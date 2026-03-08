@@ -12,6 +12,17 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.18.0] - 2026-03-08
+
+### feat
+- Replace "Loading..." text with animated skeleton UI in MovieList
+  - List view: 6 skeleton rows matching the poster + title + badge layout
+  - Grid view: 12 skeleton cards matching the poster + title layout
+  - Uses `animate-pulse` with powder-blue/mint palette tints
+
+---
+
+
 ## [0.17.0] - 2026-03-08
 
 ### feat

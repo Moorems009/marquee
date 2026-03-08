@@ -146,7 +146,43 @@ export default function MovieList({
       )}
 
       {loading ? (
-        <p className="text-warm-gray">Loading...</p>
+        viewMode === 'list' ? (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex justify-between items-center py-3 px-4 bg-white border border-powder-blue border-l-4 border-l-blush rounded animate-pulse"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-8 h-12 bg-powder-blue/40 rounded-sm shrink-0" />
+                  <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                    <div className="h-4 bg-powder-blue/40 rounded w-2/5" />
+                    <div className="h-3 bg-powder-blue/30 rounded w-1/4" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <div className="h-5 w-12 bg-mint/40 rounded-sm" />
+                  <div className="h-5 w-8 bg-powder-blue/30 rounded-sm" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded overflow-hidden border border-powder-blue bg-white animate-pulse"
+              >
+                <div className="w-full bg-powder-blue/30" style={{ aspectRatio: '2/3' }} />
+                <div className="p-2 flex flex-col gap-1.5">
+                  <div className="h-3 bg-powder-blue/40 rounded w-3/4" />
+                  <div className="h-3 bg-mint/40 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : movies.length === 0 ? (
         <p className="text-warm-gray italic">No movies yet. Add some!</p>
       ) : sortedMovies.length === 0 ? (
@@ -163,7 +199,7 @@ export default function MovieList({
                   <img
                     src={movie.poster_url}
                     alt={movie.title}
-                    className="w-8 h-12 object-cover rounded-sm flex-shrink-0"
+                    className="w-8 h-12 object-cover rounded-sm shrink-0"
                   />
                 )}
                 <div className="min-w-0">
@@ -189,7 +225,7 @@ export default function MovieList({
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0 ml-3 flex-wrap justify-end">
+              <div className="flex items-center gap-2 shrink-0 ml-3 flex-wrap justify-end">
                 <span className="text-xs uppercase tracking-wide text-white bg-mint px-2 py-0.5 rounded-sm whitespace-nowrap">
                   {movie.format}
                 </span>
