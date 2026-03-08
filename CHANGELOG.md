@@ -12,6 +12,16 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.12.0] - 2026-03-08
+
+### chore
+- Convert AddMovieForm.tsx fully to Tailwind — no inline styles remain
+- Responsive two-row grid layout: stacks vertically on mobile, proportional columns on desktop (md:grid-cols-[3fr_2fr_1fr] and md:grid-cols-[1fr_3fr_auto])
+- Replace JS onMouseEnter/Leave hover handlers with Tailwind hover:bg-cream on TMDB dropdown items
+
+---
+
+
 ## [0.11.0] - 2026-03-08
 
 ### chore

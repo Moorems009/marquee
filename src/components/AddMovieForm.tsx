@@ -88,17 +88,13 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
   }
 
   return (
-    <div style={{
-      backgroundColor: 'white',
-      border: '1px solid var(--powder-blue)',
-      borderRadius: '4px',
-      padding: '1.5rem',
-      marginBottom: '2rem'
-    }}>
+    <div className="bg-white border border-powder-blue rounded p-6 mb-8">
       <h2 className={sectionHeadingStyle}>Add to your library</h2>
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-          <div style={{ flex: '3', minWidth: '160px', position: 'relative' }}>
+
+        {/* Row 1: Title | Director | Year */}
+        <div className="grid grid-cols-1 gap-3 mb-3 md:grid-cols-[3fr_2fr_1fr]">
+          <div className="relative">
             <input
               type="text"
               placeholder="Title"
@@ -109,46 +105,24 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
               className={inputStyle}
             />
             {showDropdown && tmdbResults.length > 0 && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
-                backgroundColor: 'white',
-                border: '1px solid var(--powder-blue)',
-                borderTop: 'none',
-                borderRadius: '0 0 4px 4px',
-                zIndex: 100,
-                boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-              }}>
+              <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-[100] shadow-md">
                 {tmdbResults.map((result) => (
                   <div
                     key={result.id}
                     onMouseDown={() => handleSelectTMDB(result)}
-                    style={{
-                      padding: '0.5rem 0.75rem',
-                      cursor: 'pointer',
-                      borderBottom: '1px solid var(--powder-blue)',
-                      fontSize: '0.875rem',
-                      color: 'var(--navy)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem'
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+                    className="flex items-center gap-3 px-3 py-2 cursor-pointer border-b border-powder-blue text-sm text-navy hover:bg-cream"
                   >
                     {result.poster_path && (
                       <img
                         src={getPosterUrl(result.poster_path, 'w92')}
                         alt={result.title}
-                        style={{ width: '32px', height: '48px', objectFit: 'cover', borderRadius: '2px' }}
+                        className="w-8 h-12 object-cover rounded-sm shrink-0"
                       />
                     )}
                     <div>
-                      <span style={{ fontWeight: 'bold' }}>{result.title}</span>
+                      <span className="font-bold">{result.title}</span>
                       {result.release_date && (
-                        <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem' }}>
+                        <span className="text-warm-gray ml-2">
                           ({result.release_date.split('-')[0]})
                         </span>
                       )}
@@ -163,7 +137,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
             placeholder="Director"
             value={director}
             onChange={(e) => setDirector(e.target.value)}
-            className={inputStyle} style={{ flex: '2', minWidth: '140px', width: 'auto' }}
+            className={inputStyle}
           />
           <input
             type="number"
@@ -171,14 +145,16 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
             value={year}
             onChange={(e) => setYear(e.target.value)}
             required
-            className={inputStyle} style={{ flex: '1', minWidth: '80px', width: 'auto' }}
+            className={inputStyle}
           />
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+
+        {/* Row 2: Format | Imprint | Add button */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_3fr_auto]">
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className={inputStyle} style={{ flex: '1', minWidth: '100px', width: 'auto' }}
+            className={inputStyle}
           >
             <option>Blu-ray</option>
             <option>4K UHD</option>
@@ -192,27 +168,19 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
             placeholder="Imprint (e.g. Criterion, Arrow)"
             value={imprint}
             onChange={(e) => setImprint(e.target.value)}
-            className={inputStyle} style={{ flex: '3', minWidth: '160px', width: 'auto' }}
+            className={inputStyle}
           />
           <button
             type="submit"
-            style={{
-              backgroundColor: 'var(--powder-blue)',
-              color: 'var(--navy)',
-              border: 'none',
-              padding: '0.5rem 1.5rem',
-              cursor: 'pointer',
-              fontFamily: 'Georgia, serif',
-              borderRadius: '2px',
-              fontWeight: 'bold'
-            }}
+            className="bg-powder-blue text-navy border-none py-2 px-6 cursor-pointer font-serif rounded-sm font-bold"
           >
             Add
           </button>
         </div>
+
       </form>
       {message && (
-        <p style={{ margin: '0.75rem 0 0 0', color: 'var(--dusty-rose)', fontSize: '0.875rem' }}>
+        <p className="mt-3 text-dusty-rose text-sm">
           {message}
         </p>
       )}
