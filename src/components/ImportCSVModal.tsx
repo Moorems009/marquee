@@ -35,6 +35,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
   const fileRef = useRef<HTMLInputElement>(null)
   const [rows, setRows] = useState<ImportRow[]>([])
   const [isParsed, setIsParsed] = useState(false)
+  const [fallbackFormat, setFallbackFormat] = useState('Blu-ray')
   const [isImporting, setIsImporting] = useState(false)
   const [currentDuplicateIndex, setCurrentDuplicateIndex] = useState<number | null>(null)
   const [summary, setSummary] = useState<{ imported: number; skipped: number; errors: number } | null>(null)
@@ -110,8 +111,10 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
             String(m.year) === String(row.year) &&
             (normalizedRowFormat ? m.format === normalizedRowFormat : true)
         )
-        const formatWarning = row.format && !normalizeFormat(row.format)
-          ? `Unknown format "${row.format}" — will default to Blu-ray`
+        const formatWarning = !row.format
+          ? `No format specified — will use fallback`
+          : !normalizeFormat(row.format)
+          ? `Unknown format "${row.format}" — will use fallback`
           : undefined
 
         return {
@@ -137,7 +140,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     let mpaaRating: string | null = null
     let genre: string | null = null
     const normalizedFormat = row.format ? normalizeFormat(row.format) : null
-    const format = normalizedFormat || 'Blu-ray'
+    const format = normalizedFormat || fallbackFormat
 
     try {
       const results = await searchMovies(row.title)
@@ -351,10 +354,27 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         {!isParsed && (
           <div>
             <p className="text-warm-gray text-sm mb-4">
-              Upload a CSV with columns: <strong>Title, Director, Year, Format, Imprint, Labels</strong>.
-              Labels should be separated by semicolons (e.g. <em>Horror;Criterion</em>).
+              Upload a CSV with a <strong>Title</strong> column. Optional columns: Director, Year, Format, Imprint, Labels.
+              Labels separated by semicolons (e.g. <em>Horror;Criterion</em>).
               Valid formats: <strong>4K, Blu-ray, DVD, VHS, Digital</strong>.
             </p>
+            <div className="mb-4">
+              <label className="block text-warm-gray text-xs uppercase tracking-wider mb-1">
+                Fallback format (for rows with no format)
+              </label>
+              <select
+                value={fallbackFormat}
+                onChange={(e) => setFallbackFormat(e.target.value)}
+                className={inputStyle}
+              >
+                <option>Blu-ray</option>
+                <option>4K</option>
+                <option>DVD</option>
+                <option>VHS</option>
+                <option>Digital</option>
+                <option value="">Leave Blank</option>
+              </select>
+            </div>
             <input
               ref={fileRef}
               type="file"
@@ -410,6 +430,13 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         {/* Step 3: Row preview / progress */}
         {isParsed && rows.length > 0 && (
           <div className="mb-4">
+            {rows.some(r => r.warning) && (
+              <p className="text-warm-gray text-[0.8rem] mb-2 italic">
+                {fallbackFormat
+                  ? <>Rows using fallback will be imported as <strong className="text-navy">{fallbackFormat}</strong>.</>
+                  : 'Rows using fallback will have no format set.'}
+              </p>
+            )}
             <p className="text-warm-gray text-[0.8rem] mb-2">
               {rows.length} movie{rows.length !== 1 ? 's' : ''} found
               {rows.filter(r => r.status === 'duplicate').length > 0 &&

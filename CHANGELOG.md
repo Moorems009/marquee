@@ -12,6 +12,19 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.20.0] - 2026-03-08
+
+### feat
+- CSV import now accepts Title as the only required column; all other columns are optional
+- Add fallback format selector in CSV import step 1 — applied to rows with no format or an unrecognized format
+  - Options: Blu-ray (default), 4K, DVD, VHS, Digital, Leave Blank
+  - "Leave Blank" stores an empty format string so the movie can be updated later
+  - Preview note shows the current fallback selection when format warnings are present
+  - Format warnings now also flag rows with no format at all (previously silent)
+
+---
+
+
 ## [0.19.0] - 2026-03-08
 
 ### feat
