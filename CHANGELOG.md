@@ -12,6 +12,18 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.21.0] - 2026-03-08
+
+### feat
+- Add first-time user welcome banner in MovieLibrary
+  - Shown once on first visit, keyed off `user_metadata.settings.hasSeenWelcome`
+  - Directs users to the Add Movie form or Import CSV
+  - Dismissed by ×, "Add a movie ↓", or "Import CSV" (which also opens the modal)
+  - All dismiss paths persist `hasSeenWelcome: true` to Supabase, merging with existing settings
+
+---
+
+
 ## [0.20.0] - 2026-03-08
 
 ### feat

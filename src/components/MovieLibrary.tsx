@@ -27,6 +27,7 @@ export default function MovieLibrary() {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [nightMode, setNightMode] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -35,12 +36,20 @@ export default function MovieLibrary() {
       const saved = authData.user?.user_metadata?.settings
       if (saved?.defaultView === 'grid' || saved?.defaultView === 'list') setViewMode(saved.defaultView)
       if (saved?.nightMode === true) setNightMode(true)
+      if (!saved?.hasSeenWelcome) setShowWelcome(true)
       fetchMovies()
       fetchLabels()
       fetchMovieLabels()
     }
     init()
   }, [])
+
+  async function dismissWelcome() {
+    setShowWelcome(false)
+    const { data: authData } = await supabase.auth.getUser()
+    const existing = authData.user?.user_metadata?.settings || {}
+    await supabase.auth.updateUser({ data: { settings: { ...existing, hasSeenWelcome: true } } })
+  }
 
   const VALID_FORMATS = ['4K', 'Blu-ray', 'DVD', 'VHS', 'Digital']
 
@@ -132,6 +141,35 @@ export default function MovieLibrary() {
           )}
         </div>
       </div>
+
+      {showWelcome && (
+        <div className="bg-white border border-powder-blue rounded p-6 mb-8 relative">
+          <button
+            onClick={dismissWelcome}
+            className="absolute top-3 right-4 bg-transparent border-none text-warm-gray cursor-pointer font-serif text-lg leading-none"
+          >
+            ×
+          </button>
+          <h2 className="text-dusty-rose uppercase tracking-widest text-sm m-0 mb-3">Welcome to Marquee</h2>
+          <p className="text-navy text-sm m-0 mb-4">
+            Your personal physical media library. Start by adding a movie below, or import an existing collection all at once.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={dismissWelcome}
+              className="bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif text-sm rounded-sm"
+            >
+              Add a movie ↓
+            </button>
+            <button
+              onClick={() => { dismissWelcome(); setShowImportModal(true) }}
+              className="bg-transparent border border-powder-blue text-navy px-4 py-1.5 cursor-pointer font-serif text-sm rounded-sm"
+            >
+              Import CSV
+            </button>
+          </div>
+        </div>
+      )}
 
       <ErrorBoundary>
         <AddMovieForm movies={movies} onMovieAdded={fetchMovies} />
