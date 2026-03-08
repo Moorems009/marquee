@@ -30,6 +30,7 @@ export default function MovieLibrary() {
   const [nightMode, setNightMode] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [nowPlayingIds, setNowPlayingIds] = useState<string[]>([])
+  const [showAddForm, setShowAddForm] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -174,12 +175,15 @@ export default function MovieLibrary() {
             ×
           </button>
           <h2 className="text-dusty-rose uppercase tracking-widest text-sm m-0 mb-3">Welcome to Marquee</h2>
-          <p className="text-navy text-sm m-0 mb-4">
-            Your personal physical media library. Start by adding a movie below, or import an existing collection all at once.
+          <p className="text-navy text-sm m-0 mb-2">
+            Your personal physical media shelf. Start by adding a movie below, or import an existing collection all at once.
+          </p>
+          <p className="text-warm-gray text-sm m-0 mb-4 italic">
+            Once you have movies, open any title and click <span className="font-bold not-italic text-navy">Now Playing</span> to feature it on the marquee above.
           </p>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={dismissWelcome}
+              onClick={() => { dismissWelcome(); setShowAddForm(true) }}
               className="bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif text-sm rounded-sm"
             >
               Add a movie ↓
@@ -196,9 +200,27 @@ export default function MovieLibrary() {
 
       <NowPlayingMarquee movies={movies} nowPlayingIds={nowPlayingIds} />
 
-      <ErrorBoundary>
-        <AddMovieForm movies={movies} onMovieAdded={fetchMovies} />
-      </ErrorBoundary>
+      <div className="mb-8">
+        <button
+          onClick={() => setShowAddForm((v) => !v)}
+          className="flex items-center gap-2 bg-transparent border border-powder-blue text-navy px-4 py-1.5 cursor-pointer font-serif text-sm rounded-sm"
+        >
+          <span>{showAddForm ? '−' : '+'}</span> Add a movie
+        </button>
+        {showAddForm && (
+          <div className="mt-3">
+            <ErrorBoundary>
+              <AddMovieForm
+                movies={movies}
+                onMovieAdded={() => {
+                  fetchMovies()
+                  setShowAddForm(true)
+                }}
+              />
+            </ErrorBoundary>
+          </div>
+        )}
+      </div>
 
       <ErrorBoundary>
         <MovieList

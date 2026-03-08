@@ -145,11 +145,11 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
           </label>
         </div>
 
-        {/* Library Data */}
+        {/* Shelf Data */}
         <div className="mb-6 pt-6 border-t border-powder-blue">
-          <div className={`${fieldLabelStyle} mb-2`}>Library Data</div>
+          <div className={`${fieldLabelStyle} mb-2`}>Shelf Data</div>
           <p className="text-[0.8rem] text-warm-gray mt-0 mb-3">
-            Fill in missing TMDB data (poster, director, MPAA rating, genre) for all movies in your library.
+            Fill in missing TMDB data (poster, director, MPAA rating, genre) for all movies in your shelf.
           </p>
           <button
             onClick={handleRefreshTMDB}

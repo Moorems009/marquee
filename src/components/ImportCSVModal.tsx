@@ -390,7 +390,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         {currentDuplicateIndex !== null && (
           <div className="bg-white border border-blush rounded p-4 mb-4">
             <p className="text-navy text-sm mb-3 mt-0">
-              <strong>{rows[currentDuplicateIndex].row.title}</strong> ({rows[currentDuplicateIndex].row.year}) already exists in your library. What would you like to do?
+              <strong>{rows[currentDuplicateIndex].row.title}</strong> ({rows[currentDuplicateIndex].row.year}) already exists in your shelf. What would you like to do?
             </p>
             <div className="flex flex-col gap-2">
               <div className="flex gap-2">

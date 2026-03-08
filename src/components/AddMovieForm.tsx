@@ -106,7 +106,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
 
   return (
     <div className="bg-white border border-powder-blue rounded p-6 mb-8">
-      <h2 className={sectionHeadingStyle}>Add to your library</h2>
+      <h2 className={sectionHeadingStyle}>Add to your shelf</h2>
       <form onSubmit={handleSubmit}>
 
         {/* Row 1: Title | Director | Year */}
@@ -197,7 +197,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
       </form>
       {duplicateMovie && !message && (
         <p className="mt-3 text-dusty-rose text-sm">
-          Already in your library as {duplicateMovie.format}{duplicateMovie.imprint ? ` (${duplicateMovie.imprint})` : ''}.{' '}
+          Already in your shelf as {duplicateMovie.format}{duplicateMovie.imprint ? ` (${duplicateMovie.imprint})` : ''}.{' '}
           {pendingConfirm ? 'Click "Add anyway" to add it again.' : ''}
         </p>
       )}

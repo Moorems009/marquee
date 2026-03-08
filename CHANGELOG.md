@@ -12,6 +12,33 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.26.0] - 2026-03-08
+
+### feat
+- Rename "Library" → "Shelf" across all UI-visible text
+  - "Add to your library" → "Add to your shelf" (AddMovieForm heading)
+  - "Already in your library as…" → "Already in your shelf as…" (AddMovieForm duplicate warning)
+  - "My Library" → "My Shelf" (MovieList section heading)
+  - "Library Data" → "Shelf Data" (SettingsModal section label and description)
+  - "already exists in your library" → "already exists in your shelf" (ImportCSVModal duplicate prompt)
+  - "Your personal physical media library." → "Your personal physical media shelf." (welcome banner)
+
+---
+
+
+## [0.25.0] - 2026-03-08
+
+### feat
+- Make Add Movie form collapsible (collapsed by default)
+  - Toggle button `+ Add a movie` / `− Add a movie` above the form
+  - Form auto-stays open after a successful add
+  - Welcome banner "Add a movie ↓" button expands the form
+- Update welcome banner to mention the Now Playing marquee feature
+  - Second paragraph: "Once you have movies, open any title and click **Now Playing** to feature it on the marquee above."
+
+---
+
+
 ## [0.23.0] - 2026-03-08
 
 ### feat

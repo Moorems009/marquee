@@ -77,7 +77,7 @@ export default function MovieList({
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className={sectionHeadingStyle}>My Library</h2>
+        <h2 className={sectionHeadingStyle}>My Shelf</h2>
         <div className="flex gap-2">
           {!loading && movies.length > 0 && (
             <button onClick={() => setShowFilters((v) => !v)} className={filterBtnClass}>
