@@ -12,6 +12,15 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.16.0] - 2026-03-08
+
+### chore
+- Convert auth/page.tsx fully to Tailwind — centered layout, branded sign-in form using shared inputStyle/fieldLabelStyle
+- Update CLAUDE.md to reflect Tailwind CSS v4 as the styling approach
+
+---
+
+
 ## [0.15.0] - 2026-03-08
 
 ### chore

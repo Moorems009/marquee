@@ -7,7 +7,7 @@ Marquee is a personal physical media movie library app. Users can catalogue thei
 - **Framework**: Next.js 15 (App Router, TypeScript)
 - **Database**: Supabase (PostgreSQL)
 - **Auth**: Supabase Auth (email/password)
-- **Styling**: Inline styles with CSS variables (no Tailwind, no CSS modules)
+- **Styling**: Tailwind CSS v4 with custom design tokens registered via `@theme` in `globals.css`
 - **Movie Metadata**: TMDB API (The Movie Database)
 - **Hosting**: Vercel (pending)
 - **Repo**: https://github.com/Moorems009/marquee.git
@@ -77,24 +77,29 @@ Note: TMDB token is currently public (NEXT_PUBLIC_). Before going live this shou
 | label_id | uuid | FK to labels.id |
 
 ## Design System
-All styling is done with inline styles referencing CSS variables defined in `globals.css`.
+Styling uses Tailwind CSS v4. Design tokens are registered in `globals.css` via `@theme` and are available as Tailwind utilities (e.g. `text-navy`, `bg-cream`, `border-powder-blue`, `font-serif`). CSS variables in `:root` are also kept for any remaining inline style needs.
 
-### Color Palette
-```css
---cream: #F5F0E8       /* page background */
---blush: #E8A0A0       /* list row accent border */
---powder-blue: #A8C4D4 /* borders, buttons, inputs */
---mint: #A8C9B4        /* format badge, progress bar */
---butter: #F0D882      /* label pills */
---dusty-rose: #C4747C  /* headings, delete actions */
---navy: #2C3E6B        /* primary text */
---warm-gray: #8C7B6B   /* secondary text, placeholders */
-```
+### Color Palette (Tailwind utilities)
+| Token | Value | Usage |
+|-------|-------|-------|
+| `cream` | #F5F0E8 | page background |
+| `blush` | #E8A0A0 | list row accent border |
+| `powder-blue` | #A8C4D4 | borders, buttons, inputs |
+| `mint` | #A8C9B4 | format badge, progress bar |
+| `butter` | #F0D882 | label pills |
+| `dusty-rose` | #C4747C | headings, delete actions |
+| `navy` | #2C3E6B | primary text |
+| `warm-gray` | #8C7B6B | secondary text, placeholders |
 
 ### Typography
-- Font: Georgia, serif throughout
-- Headings: uppercase, letter-spacing: 0.1em, color: var(--dusty-rose)
-- Field labels: uppercase, 0.75rem, color: var(--warm-gray)
+- Font: `font-serif` (Georgia, serif) throughout
+- Headings: `uppercase tracking-widest text-dusty-rose`
+- Field labels: `uppercase tracking-wider text-xs text-warm-gray`
+
+### Shared Styles (`src/lib/styles.ts`)
+- `inputStyle` — applied to all inputs and selects
+- `fieldLabelStyle` — applied to all field labels
+- `sectionHeadingStyle` — applied to section/modal headings
 
 ## Features Built
 - Email/password authentication (sign in, sign up, sign out)
@@ -119,7 +124,6 @@ All styling is done with inline styles referencing CSS variables defined in `glo
 - **TMDB token is public** — should be proxied through a Next.js API route (`/api/tmdb`) so the token stays server-side
 - Search and filter library by title, director, label, format
 - Sort library by title, year, director, format
-- Mobile layout needs review and fixes
 - Session expiry handling — expired sessions should redirect to /auth gracefully
 - Error boundaries to prevent full page crashes
 - Loading skeletons instead of plain "Loading..." text
