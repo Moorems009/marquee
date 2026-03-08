@@ -352,7 +352,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
               type="file"
               accept=".csv"
               onChange={handleFileUpload}
-              style={{ ...inputStyle, cursor: 'pointer' }}
+              className={inputStyle} style={{ cursor: 'pointer' }}
             />
           </div>
         )}

@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+@theme {
+  --color-cream: #F5F0E8;
+  --color-blush: #E8A0A0;
+  --color-powder-blue: #A8C4D4;
+  --color-mint: #A8C9B4;
+  --color-butter: #F0D882;
+  --color-dusty-rose: #C4747C;
+  --color-navy: #2C3E6B;
+  --color-warm-gray: #8C7B6B;
+
+  --font-serif: 'Georgia', serif;
+}
+
 :root {
   --cream: #F5F0E8;
   --blush: #E8A0A0;

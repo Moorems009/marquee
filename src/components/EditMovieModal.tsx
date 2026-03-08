@@ -141,13 +141,13 @@ export default function EditMovieModal({
 
             {/* Title with TMDB autocomplete */}
             <div style={{ position: 'relative' }}>
-              <label style={fieldLabelStyle}>Title</label>
+              <label className={fieldLabelStyle}>Title</label>
               <input
                 type="text"
                 value={editData.title || ''}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 onBlur={() => setTimeout(() => setShowTmdbDropdown(false), 150)}
-                style={inputStyle}
+                className={inputStyle}
               />
               {showTmdbDropdown && tmdbResults.length > 0 && (
                 <div style={{
@@ -201,29 +201,29 @@ export default function EditMovieModal({
             </div>
 
             <div>
-              <label style={fieldLabelStyle}>Director</label>
+              <label className={fieldLabelStyle}>Director</label>
               <input
                 type="text"
                 value={editData.director || ''}
                 onChange={(e) => setEditData({ ...editData, director: e.target.value })}
-                style={inputStyle}
+                className={inputStyle}
               />
             </div>
             <div>
-              <label style={fieldLabelStyle}>Year</label>
+              <label className={fieldLabelStyle}>Year</label>
               <input
                 type="number"
                 value={editData.year || ''}
                 onChange={(e) => setEditData({ ...editData, year: parseInt(e.target.value) })}
-                style={inputStyle}
+                className={inputStyle}
               />
             </div>
             <div>
-              <label style={fieldLabelStyle}>Format</label>
+              <label className={fieldLabelStyle}>Format</label>
               <select
                 value={editData.format || 'Blu-ray'}
                 onChange={(e) => setEditData({ ...editData, format: e.target.value })}
-                style={inputStyle}
+                className={inputStyle}
               >
                 <option>Blu-ray</option>
                 <option>4K UHD</option>
@@ -234,36 +234,36 @@ export default function EditMovieModal({
               </select>
             </div>
             <div>
-              <label style={fieldLabelStyle}>Imprint</label>
+              <label className={fieldLabelStyle}>Imprint</label>
               <input
                 type="text"
                 value={editData.imprint || ''}
                 onChange={(e) => setEditData({ ...editData, imprint: e.target.value })}
-                style={inputStyle}
+                className={inputStyle}
               />
             </div>
             <div>
-              <label style={fieldLabelStyle}>MPAA Rating</label>
+              <label className={fieldLabelStyle}>MPAA Rating</label>
               <input
                 type="text"
                 placeholder="e.g. PG-13, R, NR"
                 value={editData.mpaa_rating || ''}
                 onChange={(e) => setEditData({ ...editData, mpaa_rating: e.target.value || null })}
-                style={inputStyle}
+                className={inputStyle}
               />
             </div>
             <div>
-              <label style={fieldLabelStyle}>Genre</label>
+              <label className={fieldLabelStyle}>Genre</label>
               <input
                 type="text"
                 placeholder="e.g. Drama, Thriller"
                 value={editData.genre || ''}
                 onChange={(e) => setEditData({ ...editData, genre: e.target.value || null })}
-                style={inputStyle}
+                className={inputStyle}
               />
             </div>
             <div>
-              <label style={fieldLabelStyle}>Labels</label>
+              <label className={fieldLabelStyle}>Labels</label>
               {editMovieLabels.length > 0 && (
                 <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem', marginTop: '0.25rem' }}>
                   {editMovieLabels.map((label) => (
@@ -306,7 +306,7 @@ export default function EditMovieModal({
                   value={labelInput}
                   onChange={(e) => handleLabelInput(e.target.value)}
                   onBlur={() => setTimeout(() => setShowLabelDropdown(false), 150)}
-                  style={inputStyle}
+                  className={inputStyle}
                 />
                 {showLabelDropdown && labelSuggestions.length > 0 && (
                   <div style={{

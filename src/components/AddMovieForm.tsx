@@ -95,7 +95,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
       padding: '1.5rem',
       marginBottom: '2rem'
     }}>
-      <h2 style={sectionHeadingStyle}>Add to your library</h2>
+      <h2 className={sectionHeadingStyle}>Add to your library</h2>
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
           <div style={{ flex: '3', minWidth: '160px', position: 'relative' }}>
@@ -106,7 +106,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
               onChange={(e) => handleTitleChange(e.target.value)}
               onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
               required
-              style={{ ...inputStyle, width: '100%' }}
+              className={inputStyle}
             />
             {showDropdown && tmdbResults.length > 0 && (
               <div style={{
@@ -163,7 +163,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
             placeholder="Director"
             value={director}
             onChange={(e) => setDirector(e.target.value)}
-            style={{ ...inputStyle, flex: '2', minWidth: '140px', width: 'auto' }}
+            className={inputStyle} style={{ flex: '2', minWidth: '140px', width: 'auto' }}
           />
           <input
             type="number"
@@ -171,14 +171,14 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
             value={year}
             onChange={(e) => setYear(e.target.value)}
             required
-            style={{ ...inputStyle, flex: '1', minWidth: '80px', width: 'auto' }}
+            className={inputStyle} style={{ flex: '1', minWidth: '80px', width: 'auto' }}
           />
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            style={{ ...inputStyle, flex: '1', minWidth: '100px', width: 'auto' }}
+            className={inputStyle} style={{ flex: '1', minWidth: '100px', width: 'auto' }}
           >
             <option>Blu-ray</option>
             <option>4K UHD</option>
@@ -192,7 +192,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
             placeholder="Imprint (e.g. Criterion, Arrow)"
             value={imprint}
             onChange={(e) => setImprint(e.target.value)}
-            style={{ ...inputStyle, flex: '3', minWidth: '160px', width: 'auto' }}
+            className={inputStyle} style={{ flex: '3', minWidth: '160px', width: 'auto' }}
           />
           <button
             type="submit"

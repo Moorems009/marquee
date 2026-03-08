@@ -1,27 +1,5 @@
-export const inputStyle = {
-  padding: '0.5rem 0.75rem',
-  border: '1px solid var(--powder-blue)',
-  borderRadius: '2px',
-  fontFamily: 'Georgia, serif',
-  backgroundColor: 'var(--cream)',
-  color: 'var(--navy)',
-  width: '100%',
-  boxSizing: 'border-box' as const
-}
+export const inputStyle = 'py-2 px-3 border border-powder-blue rounded-sm font-serif bg-cream text-navy w-full box-border'
 
-export const fieldLabelStyle = {
-  fontSize: '0.75rem',
-  color: 'var(--warm-gray)',
-  display: 'block' as const,
-  marginBottom: '0.25rem',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.05em'
-}
+export const fieldLabelStyle = 'text-xs text-warm-gray block mb-1 uppercase tracking-wider'
 
-export const sectionHeadingStyle = {
-  margin: '0 0 1rem 0',
-  fontSize: '1.1rem',
-  color: 'var(--dusty-rose)',
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.1em'
-}
+export const sectionHeadingStyle = 'mt-0 mb-4 text-[1.1rem] text-dusty-rose uppercase tracking-widest'

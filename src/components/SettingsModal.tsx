@@ -131,11 +131,11 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ ...sectionHeadingStyle, marginTop: 0, marginBottom: '1.5rem' }}>Settings</h2>
+        <h2 className={sectionHeadingStyle} style={{ marginBottom: '1.5rem' }}>Settings</h2>
 
         {/* Default View */}
         <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ ...fieldLabelStyle, marginBottom: '0.5rem' }}>Default View</div>
+          <div className={fieldLabelStyle} style={{ marginBottom: '0.5rem' }}>Default View</div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button style={viewButtonStyle(defaultView === 'list')} onClick={() => setDefaultView('list')}>
               ☰ List
@@ -148,7 +148,7 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
 
         {/* Library Data */}
         <div style={{ marginBottom: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--powder-blue)' }}>
-          <div style={{ ...fieldLabelStyle, marginBottom: '0.5rem' }}>Library Data</div>
+          <div className={fieldLabelStyle} style={{ marginBottom: '0.5rem' }}>Library Data</div>
           <p style={{ fontSize: '0.8rem', color: 'var(--warm-gray)', margin: '0 0 0.75rem 0' }}>
             Fill in missing TMDB data (poster, director, MPAA rating, genre) for all movies in your library.
           </p>

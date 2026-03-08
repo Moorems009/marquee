@@ -11,6 +11,27 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ---
 
+## [0.10.0] - 2026-03-08
+
+### chore
+- Add Tailwind CSS v4 to the project (already present as a dependency; activated via  in globals.css)
+- Register design tokens in a  block so the full color palette and Georgia serif font are available as Tailwind utilities (e.g. , , , )
+- Add  to suppress the built-in CSS linter warning for Tailwind v4  at-rule
+- Convert  from inline style objects to Tailwind class strings (, , )
+- Update , , , and  to apply shared styles via  instead of ; remaining per-element overrides stay as inline styles
+
+---
+
+## [0.10.0] - 2026-03-08
+
+### chore
+- Activate Tailwind CSS v4 (already a dependency); added @import "tailwindcss" and registered design tokens in a @theme block so colors and font are available as Tailwind utilities (text-navy, bg-cream, border-powder-blue, font-serif, etc.)
+- Add .vscode/settings.json to suppress built-in CSS linter warning for the @theme at-rule
+- Convert src/lib/styles.ts from inline style objects to Tailwind class strings (inputStyle, fieldLabelStyle, sectionHeadingStyle)
+- Update AddMovieForm, EditMovieModal, ImportCSVModal, and SettingsModal to apply shared styles via className instead of style; remaining per-element overrides stay as inline styles
+
+---
+
 ## [0.9.0] - 2026-03-07
 
 ### feat
