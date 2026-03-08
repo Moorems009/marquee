@@ -12,6 +12,15 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.14.0] - 2026-03-08
+
+### chore
+- Convert EditMovieModal.tsx fully to Tailwind — no inline styles remain
+- Replace JS onMouseEnter/Leave hover handlers with Tailwind hover:bg-cream on TMDB and label dropdowns
+
+---
+
+
 ## [0.13.0] - 2026-03-08
 
 ### chore

@@ -94,53 +94,26 @@ export default function EditMovieModal({
   return (
     <div
       onClick={onClose}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(44, 62, 107, 0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000
-      }}
+      className="fixed inset-0 bg-[rgba(44,62,107,0.4)] flex items-center justify-center z-1000"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: 'var(--cream)',
-          border: '1px solid var(--powder-blue)',
-          borderRadius: '4px',
-          padding: '2rem',
-          width: '100%',
-          maxWidth: '500px',
-          margin: '1rem',
-          maxHeight: '90vh',
-          overflowY: 'auto'
-        }}
+        className="bg-cream border border-powder-blue rounded p-8 w-full max-w-125 mx-4 max-h-[90vh] overflow-y-auto"
       >
-        <h2 style={{
-          margin: '0 0 1.5rem 0',
-          fontSize: '1.1rem',
-          color: 'var(--dusty-rose)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em'
-        }}>Edit Movie</h2>
+        <h2 className="mt-0 mb-6 text-[1.1rem] text-dusty-rose uppercase tracking-widest">Edit Movie</h2>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div className="flex gap-4">
           {editData.poster_url && (
             <img
               src={editData.poster_url}
               alt={editData.title}
-              style={{ width: '80px', height: '120px', objectFit: 'cover', borderRadius: '2px', flexShrink: 0 }}
+              className="w-20 h-30 object-cover rounded-sm shrink-0"
             />
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+          <div className="flex flex-col gap-4 flex-1">
 
             {/* Title with TMDB autocomplete */}
-            <div style={{ position: 'relative' }}>
+            <div className="relative">
               <label className={fieldLabelStyle}>Title</label>
               <input
                 type="text"
@@ -150,46 +123,24 @@ export default function EditMovieModal({
                 className={inputStyle}
               />
               {showTmdbDropdown && tmdbResults.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  backgroundColor: 'white',
-                  border: '1px solid var(--powder-blue)',
-                  borderTop: 'none',
-                  borderRadius: '0 0 4px 4px',
-                  zIndex: 200,
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                }}>
+                <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-200 shadow-md">
                   {tmdbResults.map((result) => (
                     <div
                       key={result.id}
                       onMouseDown={() => handleSelectTMDB(result)}
-                      style={{
-                        padding: '0.5rem 0.75rem',
-                        cursor: 'pointer',
-                        borderBottom: '1px solid var(--powder-blue)',
-                        fontSize: '0.875rem',
-                        color: 'var(--navy)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem'
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+                      className="flex items-center gap-3 px-3 py-2 cursor-pointer border-b border-powder-blue text-sm text-navy hover:bg-cream"
                     >
                       {result.poster_path && (
                         <img
                           src={getPosterUrl(result.poster_path, 'w92')}
                           alt={result.title}
-                          style={{ width: '32px', height: '48px', objectFit: 'cover', borderRadius: '2px' }}
+                          className="w-8 h-12 object-cover rounded-sm"
                         />
                       )}
                       <div>
-                        <span style={{ fontWeight: 'bold' }}>{result.title}</span>
+                        <span className="font-bold">{result.title}</span>
                         {result.release_date && (
-                          <span style={{ color: 'var(--warm-gray)', marginLeft: '0.5rem' }}>
+                          <span className="text-warm-gray ml-2">
                             ({result.release_date.split('-')[0]})
                           </span>
                         )}
@@ -265,33 +216,16 @@ export default function EditMovieModal({
             <div>
               <label className={fieldLabelStyle}>Labels</label>
               {editMovieLabels.length > 0 && (
-                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem', marginTop: '0.25rem' }}>
+                <div className="flex gap-1 flex-wrap mb-2 mt-1">
                   {editMovieLabels.map((label) => (
                     <span
                       key={label.id}
-                      style={{
-                        backgroundColor: 'var(--butter)',
-                        color: 'var(--navy)',
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: '999px',
-                        fontSize: '0.8rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.3rem'
-                      }}
+                      className="bg-butter text-navy px-2 py-0.5 rounded-full text-[0.8rem] flex items-center gap-1"
                     >
                       {label.name}
                       <button
                         onClick={() => onRemoveLabel(label)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: 'var(--warm-gray)',
-                          padding: 0,
-                          fontSize: '0.75rem',
-                          lineHeight: 1
-                        }}
+                        className="bg-transparent border-none cursor-pointer text-warm-gray p-0 text-[0.75rem] leading-none"
                       >
                         ×
                       </button>
@@ -299,7 +233,7 @@ export default function EditMovieModal({
                   ))}
                 </div>
               )}
-              <div style={{ position: 'relative' }}>
+              <div className="relative">
                 <input
                   type="text"
                   placeholder="Add a label..."
@@ -309,18 +243,7 @@ export default function EditMovieModal({
                   className={inputStyle}
                 />
                 {showLabelDropdown && labelSuggestions.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    backgroundColor: 'white',
-                    border: '1px solid var(--powder-blue)',
-                    borderTop: 'none',
-                    borderRadius: '0 0 4px 4px',
-                    zIndex: 100,
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                  }}>
+                  <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-100 shadow-md">
                     {labelSuggestions.map((label) => (
                       <div
                         key={label.id}
@@ -329,15 +252,7 @@ export default function EditMovieModal({
                           setLabelInput('')
                           setShowLabelDropdown(false)
                         }}
-                        style={{
-                          padding: '0.5rem 0.75rem',
-                          cursor: 'pointer',
-                          fontSize: '0.875rem',
-                          color: 'var(--navy)',
-                          borderBottom: '1px solid var(--powder-blue)'
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--cream)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+                        className="px-3 py-2 cursor-pointer text-sm text-navy border-b border-powder-blue hover:bg-cream"
                       >
                         {label.name}
                       </div>
@@ -345,58 +260,30 @@ export default function EditMovieModal({
                   </div>
                 )}
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--warm-gray)', margin: '0.4rem 0 0 0', fontStyle: 'italic' }}>
+              <p className="text-[0.75rem] text-warm-gray mt-1 italic">
                 Select an existing label or type a new one and click Save
               </p>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+        <div className="flex justify-between mt-6">
           <button
             onClick={onDelete}
-            style={{
-              backgroundColor: 'white',
-              color: 'var(--dusty-rose)',
-              border: '1px solid var(--dusty-rose)',
-              padding: '0.5rem 1rem',
-              cursor: 'pointer',
-              fontFamily: 'Georgia, serif',
-              borderRadius: '2px',
-              fontSize: '0.875rem'
-            }}
+            className="bg-white text-dusty-rose border border-dusty-rose px-4 py-2 cursor-pointer font-serif rounded-sm text-sm"
           >
             Delete
           </button>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="flex gap-2">
             <button
               onClick={onClose}
-              style={{
-                backgroundColor: 'white',
-                color: 'var(--warm-gray)',
-                border: '1px solid var(--warm-gray)',
-                padding: '0.5rem 1rem',
-                cursor: 'pointer',
-                fontFamily: 'Georgia, serif',
-                borderRadius: '2px',
-                fontSize: '0.875rem'
-              }}
+              className="bg-white text-warm-gray border border-warm-gray px-4 py-2 cursor-pointer font-serif rounded-sm text-sm"
             >
               Cancel
             </button>
             <button
               onClick={() => onSave(editData, labelInput)}
-              style={{
-                backgroundColor: 'var(--powder-blue)',
-                color: 'var(--navy)',
-                border: 'none',
-                padding: '0.5rem 1rem',
-                cursor: 'pointer',
-                fontFamily: 'Georgia, serif',
-                borderRadius: '2px',
-                fontSize: '0.875rem',
-                fontWeight: 'bold'
-              }}
+              className="bg-powder-blue text-navy border-none px-4 py-2 cursor-pointer font-serif rounded-sm text-sm font-bold"
             >
               Save
             </button>
