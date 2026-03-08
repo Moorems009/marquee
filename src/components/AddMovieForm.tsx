@@ -3,14 +3,15 @@
 import { useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl } from '@/lib/tmdb'
-import { TMDBResult } from '@/lib/types'
+import { TMDBResult, Movie } from '@/lib/types'
 import { inputStyle, sectionHeadingStyle } from '@/lib/styles'
 
 type Props = {
+  movies: Movie[]
   onMovieAdded: () => void
 }
 
-export default function AddMovieForm({ onMovieAdded }: Props) {
+export default function AddMovieForm({ movies, onMovieAdded }: Props) {
   const supabase = createClient()
   const [title, setTitle] = useState('')
   const [year, setYear] = useState('')
@@ -23,9 +24,11 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
   const [message, setMessage] = useState('')
   const [tmdbResults, setTmdbResults] = useState<TMDBResult[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
+  const [pendingConfirm, setPendingConfirm] = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function handleTitleChange(value: string) {
+    setPendingConfirm(false)
     setTitle(value)
     if (searchTimeout.current) clearTimeout(searchTimeout.current)
     searchTimeout.current = setTimeout(async () => {
@@ -60,9 +63,22 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
     if (genreValue) setGenre(genreValue)
   }
 
+  const duplicateMovie = title && year
+    ? movies.find(
+        (m) => m.title.toLowerCase() === title.toLowerCase() &&
+               String(m.year) === year &&
+               m.format === format
+      ) ?? null
+    : null
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setMessage('')
+
+    if (duplicateMovie && !pendingConfirm) {
+      setPendingConfirm(true)
+      return
+    }
 
     const { data: authData } = await supabase.auth.getUser()
     const user = authData.user
@@ -83,6 +99,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
       setPosterUrl('')
       setMpaaRating('')
       setGenre('')
+      setPendingConfirm(false)
       onMovieAdded()
     }
   }
@@ -105,7 +122,7 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
               className={inputStyle}
             />
             {showDropdown && tmdbResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-[100] shadow-md">
+              <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-100 shadow-md">
                 {tmdbResults.map((result) => (
                   <div
                     key={result.id}
@@ -157,7 +174,6 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
             className={inputStyle}
           >
             <option>Blu-ray</option>
-            <option>4K UHD</option>
             <option>4K</option>
             <option>DVD</option>
             <option>VHS</option>
@@ -172,13 +188,19 @@ export default function AddMovieForm({ onMovieAdded }: Props) {
           />
           <button
             type="submit"
-            className="bg-powder-blue text-navy border-none py-2 px-6 cursor-pointer font-serif rounded-sm font-bold"
+            className={`border-none py-2 px-6 cursor-pointer font-serif rounded-sm font-bold ${pendingConfirm ? 'bg-dusty-rose text-white' : 'bg-powder-blue text-navy'}`}
           >
-            Add
+            {pendingConfirm ? 'Add anyway' : 'Add'}
           </button>
         </div>
 
       </form>
+      {duplicateMovie && !message && (
+        <p className="mt-3 text-dusty-rose text-sm">
+          Already in your library as {duplicateMovie.format}{duplicateMovie.imprint ? ` (${duplicateMovie.imprint})` : ''}.{' '}
+          {pendingConfirm ? 'Click "Add anyway" to add it again.' : ''}
+        </p>
+      )}
       {message && (
         <p className="mt-3 text-dusty-rose text-sm">
           {message}

@@ -103,10 +103,12 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
       const text = evt.target?.result as string
       const parsed = parseCSV(text)
       const importRows: ImportRow[] = parsed.map((row) => {
+        const normalizedRowFormat = row.format ? normalizeFormat(row.format) : null
         const isDuplicate = existingMovies.some(
           (m) =>
             m.title.toLowerCase() === row.title.toLowerCase() &&
-            String(m.year) === String(row.year)
+            String(m.year) === String(row.year) &&
+            (normalizedRowFormat ? m.format === normalizedRowFormat : true)
         )
         const formatWarning = row.format && !normalizeFormat(row.format)
           ? `Unknown format "${row.format}" — will default to Blu-ray`
@@ -249,6 +251,36 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     onImportComplete()
   }
 
+  async function handleSkipAll() {
+    const updatedRows = rows.map((r) =>
+      r.status === 'duplicate' ? { ...r, status: 'done' as ImportStatus, message: 'Skipped' } : r
+    )
+    setRows(updatedRows)
+    setCurrentDuplicateIndex(null)
+    await runImport(updatedRows)
+  }
+
+  async function handleOverwriteAll() {
+    const updatedRows = [...rows]
+    for (let i = 0; i < updatedRows.length; i++) {
+      if (updatedRows[i].status === 'duplicate') {
+        const row = updatedRows[i].row
+        const existing = existingMovies.find(
+          (m) =>
+            m.title.toLowerCase() === row.title.toLowerCase() &&
+            String(m.year) === String(row.year)
+        )
+        if (existing) {
+          await supabase.from('movies').delete().eq('id', existing.id)
+        }
+        updatedRows[i] = { ...updatedRows[i], status: 'pending' }
+      }
+    }
+    setRows(updatedRows)
+    setCurrentDuplicateIndex(null)
+    await runImport(updatedRows)
+  }
+
   async function handleStartImport() {
     const firstDuplicate = rows.findIndex((r) => r.status === 'duplicate')
     if (firstDuplicate !== -1) {
@@ -340,19 +372,37 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
             <p className="text-navy text-sm mb-3 mt-0">
               <strong>{rows[currentDuplicateIndex].row.title}</strong> ({rows[currentDuplicateIndex].row.year}) already exists in your library. What would you like to do?
             </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleDuplicateChoice('skip')}
-                className="bg-white text-warm-gray border border-warm-gray px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm"
-              >
-                Skip
-              </button>
-              <button
-                onClick={() => handleDuplicateChoice('overwrite')}
-                className="bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm font-bold"
-              >
-                Overwrite
-              </button>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleDuplicateChoice('skip')}
+                  className="bg-white text-warm-gray border border-warm-gray px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={() => handleDuplicateChoice('overwrite')}
+                  className="bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm font-bold"
+                >
+                  Overwrite
+                </button>
+              </div>
+              {rows.filter((r) => r.status === 'duplicate').length > 1 && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSkipAll}
+                    className="bg-white text-warm-gray border border-warm-gray px-4 py-1 cursor-pointer font-serif rounded-sm text-xs"
+                  >
+                    Skip all duplicates
+                  </button>
+                  <button
+                    onClick={handleOverwriteAll}
+                    className="bg-white text-navy border border-powder-blue px-4 py-1 cursor-pointer font-serif rounded-sm text-xs"
+                  >
+                    Overwrite all duplicates
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

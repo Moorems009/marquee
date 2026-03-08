@@ -177,7 +177,6 @@ export default function EditMovieModal({
                 className={inputStyle}
               >
                 <option>Blu-ray</option>
-                <option>4K UHD</option>
                 <option>4K</option>
                 <option>DVD</option>
                 <option>VHS</option>

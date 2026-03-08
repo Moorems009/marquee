@@ -8,6 +8,7 @@ import { Movie } from '@/lib/types'
 
 type UserSettings = {
   defaultView: 'list' | 'grid'
+  nightMode: boolean
 }
 
 type Props = {
@@ -21,6 +22,7 @@ type Props = {
 export default function SettingsModal({ currentSettings, movies, onClose, onSave, onRefreshComplete }: Props) {
   const supabase = createClient()
   const [defaultView, setDefaultView] = useState<'list' | 'grid'>(currentSettings.defaultView)
+  const [nightMode, setNightMode] = useState(currentSettings.nightMode)
   const [saving, setSaving] = useState(false)
   const [refreshState, setRefreshState] = useState<'idle' | 'running' | 'done'>('idle')
   const [refreshProgress, setRefreshProgress] = useState<{ current: number; total: number } | null>(null)
@@ -86,7 +88,7 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
 
   async function handleSave() {
     setSaving(true)
-    const settings: UserSettings = { defaultView }
+    const settings: UserSettings = { defaultView, nightMode }
     await supabase.auth.updateUser({ data: { settings } })
     onSave(settings)
     setSaving(false)
@@ -118,6 +120,45 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
               ⊞ Grid
             </button>
           </div>
+        </div>
+
+        {/* Mann Mode */}
+        <div className="mb-6 pt-6 border-t border-powder-blue">
+          <div className={`${fieldLabelStyle} mb-2`}>Mann Mode</div>
+          <label
+            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', minHeight: '44px' }}
+          >
+            <div
+              onClick={() => setNightMode((v) => !v)}
+              style={{
+                position: 'relative',
+                width: '48px',
+                height: '28px',
+                borderRadius: '14px',
+                backgroundColor: nightMode ? 'var(--color-mint)' : 'var(--color-powder-blue)',
+                transition: 'background-color 0.2s',
+                flexShrink: 0,
+                cursor: 'pointer',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '3px',
+                  left: nightMode ? '23px' : '3px',
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '50%',
+                  backgroundColor: '#fff',
+                  transition: 'left 0.2s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }}
+              />
+            </div>
+            <span className="text-sm text-navy font-serif">
+              {nightMode ? 'On' : 'Off'}
+            </span>
+          </label>
         </div>
 
         {/* Library Data */}

@@ -29,3 +29,43 @@ body {
   color: var(--navy);
   font-family: 'Georgia', serif;
 }
+
+/* Night mode — Thief (1981)
+   Deep blue-black sky, electric cyan neon, hot magenta, string-light gold.
+   Overrides design tokens so all Tailwind utilities resolve to night values
+   without any class-swapping in JSX. */
+.night {
+  --color-cream: #07090F;
+  --color-navy: #C4D8E8;
+  --color-powder-blue: #152535;
+  --color-warm-gray: #3A5468;
+  --color-dusty-rose: #FFD97A;
+  --color-mint: #00DFFF;
+  --color-butter: #FF2878;
+  --color-blush: #00DFFF;
+  background-color: #07090F;
+  color: #C4D8E8;
+}
+
+/* bg-white is a hardcoded Tailwind color (not a CSS variable), override explicitly */
+.night .bg-white {
+  background-color: #0D1520;
+}
+
+/* Inputs and selects inside night mode */
+.night input,
+.night select,
+.night textarea {
+  background-color: #0D1520;
+  color: #C4D8E8;
+  border-color: #152535;
+}
+
+.night input::placeholder {
+  color: #3A5468;
+}
+
+.night option {
+  background-color: #0D1520;
+  color: #C4D8E8;
+}

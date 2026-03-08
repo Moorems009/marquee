@@ -12,6 +12,28 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.19.0] - 2026-03-08
+
+### feat
+- Add Mann Mode (night theme) toggleable in Settings, inspired by Michael Mann's *Thief* (1981)
+  - Deep blue-black background, electric cyan format badges, hot magenta label pills, string-light gold headings
+  - Implemented via `.night` CSS class overriding all `--color-*` design tokens in `globals.css` — no JSX class-swapping needed
+  - Toggle switch in Settings modal with smooth slide animation and 44px+ touch target
+  - Persists to Supabase user metadata alongside `defaultView`; restored on next page load
+- Add duplicate prevention to Add Movie form (AddMovieForm.tsx)
+  - Inline warning when title + year + format match an existing entry
+  - Two-step confirm: first submit shows "Add anyway" button in dusty-rose; second submit proceeds
+- Add duplicate prevention to CSV import (ImportCSVModal.tsx)
+  - Duplicate key: title + year + normalized format
+  - Per-row skip/overwrite choice
+  - "Skip all duplicates" and "Overwrite all duplicates" bulk action buttons when more than one duplicate is detected
+
+### fix
+- Remove "4K UHD" as a format option from Add Movie form and Edit modal (non-standard; normalized to "4K" on import)
+
+---
+
+
 ## [0.18.0] - 2026-03-08
 
 ### feat

@@ -26,13 +26,15 @@ export default function MovieLibrary() {
   const [showImportModal, setShowImportModal] = useState(false)
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [nightMode, setNightMode] = useState(false)
 
   useEffect(() => {
     async function init() {
       const { data: authData } = await supabase.auth.getUser()
       setUserEmail(authData.user?.email || '')
-      const savedView = authData.user?.user_metadata?.settings?.defaultView
-      if (savedView === 'grid' || savedView === 'list') setViewMode(savedView)
+      const saved = authData.user?.user_metadata?.settings
+      if (saved?.defaultView === 'grid' || saved?.defaultView === 'list') setViewMode(saved.defaultView)
+      if (saved?.nightMode === true) setNightMode(true)
       fetchMovies()
       fetchLabels()
       fetchMovieLabels()
@@ -88,6 +90,7 @@ export default function MovieLibrary() {
   }
 
   return (
+    <div className={`min-h-screen bg-cream ${nightMode ? 'night' : ''}`}>
     <div className="max-w-[900px] mx-auto px-4 py-6 md:px-8 md:py-8">
 
       {/* Header */}
@@ -103,7 +106,7 @@ export default function MovieLibrary() {
           </button>
 
           {showSettingsMenu && (
-            <div className="absolute top-[calc(100%+0.5rem)] right-0 bg-white border border-powder-blue rounded shadow-lg z-[200] min-w-[180px] overflow-hidden">
+            <div className="absolute top-[calc(100%+0.5rem)] right-0 bg-white border border-powder-blue rounded shadow-lg z-200 min-w-45 overflow-hidden">
               <div className="px-4 py-2 border-b border-powder-blue text-xs text-warm-gray italic">
                 {userEmail}
               </div>
@@ -131,7 +134,7 @@ export default function MovieLibrary() {
       </div>
 
       <ErrorBoundary>
-        <AddMovieForm onMovieAdded={fetchMovies} />
+        <AddMovieForm movies={movies} onMovieAdded={fetchMovies} />
       </ErrorBoundary>
 
       <ErrorBoundary>
@@ -171,10 +174,10 @@ export default function MovieLibrary() {
       {showSettingsModal && (
         <ErrorBoundary onReset={() => setShowSettingsModal(false)}>
           <SettingsModal
-            currentSettings={{ defaultView: viewMode }}
+            currentSettings={{ defaultView: viewMode, nightMode }}
             movies={movies}
             onClose={() => setShowSettingsModal(false)}
-            onSave={(settings) => setViewMode(settings.defaultView)}
+            onSave={(settings) => { setViewMode(settings.defaultView); setNightMode(settings.nightMode) }}
             onRefreshComplete={fetchMovies}
           />
         </ErrorBoundary>
@@ -192,6 +195,7 @@ export default function MovieLibrary() {
           />
         </ErrorBoundary>
       )}
+    </div>
     </div>
   )
 }
