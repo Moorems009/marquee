@@ -175,7 +175,7 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds, nightMode, on
               fontSize: '0.65rem',
               letterSpacing: '0.1em',
               cursor: 'pointer',
-              padding: 0,
+              padding: '0.5rem 0 0.25rem 0.75rem',
               lineHeight: 1
             }}
           >

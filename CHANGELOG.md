@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.35.0] - 2026-03-08
+
+### fix
+- Increase tap target on clear Now Playing button for mobile usability
+
+---
+
+
 ## [0.34.0] - 2026-03-08
 
 ### feat
