@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.37.0] - 2026-03-08
+
+### feat
+- MPAA rating filter with two modes: "Only" (exact match) and "Lower than" (shows all ratings below the selected one); mode toggle appears inline when a rating is selected; "Include NR" toggle shows/hides unrated movies; rating filter included in active filter count and cleared by "Clear filters"
+
+---
+
+
 ## [0.36.0] - 2026-03-08
 
 ### feat

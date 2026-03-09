@@ -36,10 +36,15 @@ export default function MovieList({
   const [filterFormat, setFilterFormat] = useState('')
   const [filterLabel, setFilterLabel] = useState('')
   const [filterGenre, setFilterGenre] = useState('')
+  const [filterRating, setFilterRating] = useState('')
+  const [ratingMode, setRatingMode] = useState<'exact' | 'lower'>('exact')
+  const [includeNR, setIncludeNR] = useState(true)
   const [sortBy, setSortBy] = useState<SortKey>('title-asc')
+
+  const RATING_ORDER = ['G', 'PG', 'PG-13', 'R', 'NC-17']
   const [showFilters, setShowFilters] = useState(false)
 
-  const activeFilterCount = [search.trim(), filterFormat, filterLabel, filterGenre].filter(Boolean).length
+  const activeFilterCount = [search.trim(), filterFormat, filterLabel, filterGenre, filterRating].filter(Boolean).length + (!includeNR ? 1 : 0)
 
   const allGenres = [...new Set(
     movies.flatMap(m => m.genre ? m.genre.split(',').map(g => g.trim()) : [])
@@ -58,6 +63,21 @@ export default function MovieList({
     if (filterGenre) {
       const genres = movie.genre ? movie.genre.split(',').map(g => g.trim()) : []
       if (!genres.includes(filterGenre)) return false
+    }
+    if (filterRating || !includeNR) {
+      const rating = movie.mpaa_rating?.trim() || ''
+      const isNR = !rating || rating.toUpperCase() === 'NR'
+      if (isNR) {
+        if (!includeNR) return false
+      } else if (filterRating) {
+        if (ratingMode === 'exact') {
+          if (rating !== filterRating) return false
+        } else {
+          const movieIdx = RATING_ORDER.indexOf(rating)
+          const filterIdx = RATING_ORDER.indexOf(filterRating)
+          if (movieIdx < 0 || movieIdx >= filterIdx) return false
+        }
+      }
     }
     return true
   })
@@ -174,7 +194,38 @@ export default function MovieList({
                 {allGenres.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             )}
+            <select value={filterRating} onChange={(e) => { setFilterRating(e.target.value); if (e.target.value === 'G') setRatingMode('exact') }} className={selectClass}>
+              <option value="">All ratings</option>
+              {RATING_ORDER.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
           </div>
+          {filterRating && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-warm-gray uppercase tracking-wider">Rating mode</span>
+              <div className="flex text-xs">
+                <button
+                  onClick={() => setRatingMode('exact')}
+                  className={`border border-powder-blue px-2.5 py-1 font-serif rounded-l-sm cursor-pointer ${ratingMode === 'exact' ? 'bg-powder-blue text-navy' : 'bg-white text-warm-gray'}`}
+                >
+                  Only
+                </button>
+                {filterRating !== 'G' && (
+                  <button
+                    onClick={() => setRatingMode('lower')}
+                    className={`border border-l-0 border-powder-blue px-2.5 py-1 font-serif rounded-r-sm cursor-pointer ${ratingMode === 'lower' ? 'bg-powder-blue text-navy' : 'bg-white text-warm-gray'}`}
+                  >
+                    Lower than
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => setIncludeNR(v => !v)}
+                className={`border border-powder-blue px-2.5 py-1 font-serif text-xs rounded-sm cursor-pointer ${includeNR ? 'bg-powder-blue text-navy' : 'bg-white text-warm-gray'}`}
+              >
+                Include NR
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs text-warm-gray uppercase tracking-wider">Sort</span>
@@ -191,7 +242,7 @@ export default function MovieList({
             </div>
             {activeFilterCount > 0 && (
               <button
-                onClick={() => { setSearch(''); setFilterFormat(''); setFilterLabel(''); setFilterGenre('') }}
+                onClick={() => { setSearch(''); setFilterFormat(''); setFilterLabel(''); setFilterGenre(''); setFilterRating(''); setRatingMode('exact'); setIncludeNR(true) }}
                 className="text-sm text-warm-gray bg-transparent border-none cursor-pointer font-serif underline whitespace-nowrap"
               >
                 Clear filters

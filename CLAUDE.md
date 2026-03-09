@@ -120,7 +120,6 @@ Styling uses Tailwind CSS v4. Design tokens are registered in `globals.css` via 
   - Import summary (imported / skipped / errors)
 
 ## Pending Features / Known Issues
-- **RLS not yet enabled** — Supabase RLS should be turned on with `auth.uid() = user_id` policy before going public
 - **TMDB token is public** — should be proxied through a Next.js API route (`/api/tmdb`) so the token stays server-side
 - Search and filter library by title, director, label, format
 - Sort library by title, year, director, format
