@@ -35,10 +35,15 @@ export default function MovieList({
   const [search, setSearch] = useState('')
   const [filterFormat, setFilterFormat] = useState('')
   const [filterLabel, setFilterLabel] = useState('')
+  const [filterGenre, setFilterGenre] = useState('')
   const [sortBy, setSortBy] = useState<SortKey>('title-asc')
   const [showFilters, setShowFilters] = useState(false)
 
-  const activeFilterCount = [search.trim(), filterFormat, filterLabel].filter(Boolean).length
+  const activeFilterCount = [search.trim(), filterFormat, filterLabel, filterGenre].filter(Boolean).length
+
+  const allGenres = [...new Set(
+    movies.flatMap(m => m.genre ? m.genre.split(',').map(g => g.trim()) : [])
+  )].sort()
 
   const filteredMovies = movies.filter((movie) => {
     if (search.trim()) {
@@ -49,6 +54,10 @@ export default function MovieList({
     if (filterLabel) {
       const ids = (movieLabels[String(movie.id)] || []).map((l) => String(l.id))
       if (!ids.includes(filterLabel)) return false
+    }
+    if (filterGenre) {
+      const genres = movie.genre ? movie.genre.split(',').map(g => g.trim()) : []
+      if (!genres.includes(filterGenre)) return false
     }
     return true
   })
@@ -159,6 +168,12 @@ export default function MovieList({
                 {labels.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
             )}
+            {allGenres.length > 0 && (
+              <select value={filterGenre} onChange={(e) => setFilterGenre(e.target.value)} className={selectClass}>
+                <option value="">All genres</option>
+                {allGenres.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            )}
           </div>
           <div className="flex items-center gap-2 justify-between">
             <div className="flex items-center gap-2">
@@ -176,7 +191,7 @@ export default function MovieList({
             </div>
             {activeFilterCount > 0 && (
               <button
-                onClick={() => { setSearch(''); setFilterFormat(''); setFilterLabel('') }}
+                onClick={() => { setSearch(''); setFilterFormat(''); setFilterLabel(''); setFilterGenre('') }}
                 className="text-sm text-warm-gray bg-transparent border-none cursor-pointer font-serif underline whitespace-nowrap"
               >
                 Clear filters

@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.36.0] - 2026-03-08
+
+### feat
+- Genre filter in the filter bar — derives unique genres by splitting each movie's comma-separated genre string, deduplicates and sorts them, and renders a dropdown that appears only when at least one movie has genre data; genre filter included in active filter count and cleared by "Clear filters"
+
+---
+
+
 ## [0.35.0] - 2026-03-08
 
 ### fix
