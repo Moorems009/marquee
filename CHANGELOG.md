@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.47.0] - 2026-03-09
+
+### feat
+- "Collections not found on TMDB" panel now supports manual film search: each unmatched collection gets an inline TMDB movie search (title-only, debounced) with poster thumbnails, year, and add/remove controls; once films are added, an "Expand into X films" button converts the collection into individual pending rows; collection title label is applied to each film if the label toggle was enabled
+
+---
+
+
 ## [0.46.0] - 2026-03-09
 
 ### fix

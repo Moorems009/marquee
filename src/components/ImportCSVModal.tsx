@@ -35,6 +35,13 @@ type ImportRow = {
   tmdbNotFound?: boolean
 }
 
+type ManualEntry = {
+  search: string
+  results: Array<{ id: number; title: string; release_date: string; poster_path?: string }>
+  searching: boolean
+  parts: CollectionPart[]
+}
+
 type SummaryData = {
   importedStandalone: number
   importedFromCollections: number
@@ -64,6 +71,8 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
   const [collectionResolution, setCollectionResolution] = useState<'expand' | 'keep'>('expand')
   const [useCollectionLabel, setUseCollectionLabel] = useState(true)
   const collectionsExpandedRef = useRef(0)
+  const [manualEntries, setManualEntries] = useState<Record<string, ManualEntry>>({})
+  const manualSearchTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   function normalizeFormat(raw: string): string | null {
     const val = raw.trim().toLowerCase().replace(/[\s\-_.]/g, '')
@@ -266,6 +275,65 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
 
   function handleKeepAsIs(key: string) {
     setRows(prev => prev.map(r => r.key === key ? { ...r, status: 'pending' as ImportStatus } : r))
+  }
+
+  function handleManualSearch(key: string, value: string) {
+    setManualEntries(prev => ({
+      ...prev,
+      [key]: { ...(prev[key] ?? { results: [], searching: false, parts: [] }), search: value }
+    }))
+    if (manualSearchTimeouts.current[key]) clearTimeout(manualSearchTimeouts.current[key])
+    if (value.length < 2) {
+      setManualEntries(prev => ({ ...prev, [key]: { ...prev[key], results: [] } }))
+      return
+    }
+    manualSearchTimeouts.current[key] = setTimeout(async () => {
+      setManualEntries(prev => ({ ...prev, [key]: { ...prev[key], searching: true } }))
+      const results = await searchMovies(value)
+      setManualEntries(prev => ({ ...prev, [key]: { ...prev[key], searching: false, results: results.slice(0, 5) } }))
+    }, 300)
+  }
+
+  function handleAddManualPart(key: string, result: { id: number; title: string; release_date: string; poster_path?: string }) {
+    setManualEntries(prev => {
+      const entry = prev[key] ?? { search: '', results: [], searching: false, parts: [] }
+      if (entry.parts.some(p => p.id === result.id)) return prev
+      return { ...prev, [key]: { ...entry, search: '', results: [], parts: [...entry.parts, result] } }
+    })
+  }
+
+  function handleRemoveManualPart(key: string, idx: number) {
+    setManualEntries(prev => {
+      const entry = prev[key]
+      if (!entry) return prev
+      return { ...prev, [key]: { ...entry, parts: entry.parts.filter((_, i) => i !== idx) } }
+    })
+  }
+
+  function handleConfirmManual(key: string) {
+    const entry = manualEntries[key]
+    const rowIndex = rows.findIndex(r => r.key === key)
+    if (rowIndex === -1 || !entry || entry.parts.length === 0) return
+    const originalRow = rows[rowIndex]
+    const labelName = useCollectionLabel ? originalRow.collectionLabel : undefined
+    collectionsExpandedRef.current++
+    const newRows: ImportRow[] = entry.parts.map(part => {
+      const partYear = part.release_date ? part.release_date.split('-')[0] : originalRow.row.year
+      const labels = labelName
+        ? [originalRow.row.labels, labelName].filter(Boolean).join(';')
+        : originalRow.row.labels
+      return {
+        key: String(rowKeyCounter.current++),
+        row: { ...originalRow.row, title: part.title, year: partYear, labels },
+        status: 'pending' as ImportStatus,
+        warning: originalRow.warning,
+        collectionLabel: originalRow.collectionLabel,
+        fromCollection: true
+      }
+    })
+    const updatedRows = [...rows]
+    updatedRows.splice(rowIndex, 1, ...newRows)
+    setRows(updatedRows)
   }
 
   function normTitle(t: string) {
@@ -562,24 +630,93 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         {/* Individual review for collections with no TMDB match */}
         {isParsed && notFoundCollections.length > 0 && !summary && (
           <div className="bg-white border border-blush rounded p-4 mb-4">
-            <div className="text-[0.8rem] font-bold text-navy mb-2">
+            <div className="text-[0.8rem] font-bold text-navy mb-1">
               {notFoundCollections.length} collection{notFoundCollections.length !== 1 ? 's' : ''} not found on TMDB
             </div>
             <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
-              These could not be matched to a TMDB collection. Keep each as a single entry or edit your CSV and re-upload.
+              Search for films to add manually, or keep as a single entry.
+              {useCollectionLabel && <span className="italic"> Collection title will be applied as a label.</span>}
             </p>
-            <div className="flex flex-col gap-2">
-              {notFoundCollections.map(r => (
-                <div key={r.key} className="flex items-center justify-between gap-3 py-1 border-b border-powder-blue last:border-b-0">
-                  <span className="text-navy text-[0.8rem]">{r.row.title}</span>
-                  <button
-                    onClick={() => handleKeepAsIs(r.key)}
-                    className="bg-white text-warm-gray border border-warm-gray px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem] shrink-0"
-                  >
-                    Keep as single entry
-                  </button>
-                </div>
-              ))}
+            <div className="flex flex-col gap-4">
+              {notFoundCollections.map(r => {
+                const entry = manualEntries[r.key] ?? { search: '', results: [], searching: false, parts: [] }
+                return (
+                  <div key={r.key} className="border-b border-powder-blue last:border-b-0 pb-4 last:pb-0">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <span className="text-navy text-[0.8rem] font-bold">{r.row.title}</span>
+                      <button
+                        onClick={() => handleKeepAsIs(r.key)}
+                        className="bg-white text-warm-gray border border-warm-gray px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem] shrink-0"
+                      >
+                        Keep as single entry
+                      </button>
+                    </div>
+
+                    {/* Mini film search */}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search for a film to add…"
+                        value={entry.search}
+                        onChange={(e) => handleManualSearch(r.key, e.target.value)}
+                        onBlur={() => setTimeout(() => setManualEntries(prev => ({
+                          ...prev,
+                          [r.key]: { ...(prev[r.key] ?? { search: '', searching: false, parts: [] }), results: [] }
+                        })), 150)}
+                        className="w-full border border-powder-blue rounded-sm px-3 py-1.5 font-serif text-[0.8rem] text-navy bg-white outline-none"
+                      />
+                      {entry.searching && (
+                        <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b px-3 py-2 text-[0.75rem] text-warm-gray italic">
+                          Searching…
+                        </div>
+                      )}
+                      {!entry.searching && entry.results.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-10 shadow-md">
+                          {entry.results.map(result => (
+                            <div
+                              key={result.id}
+                              onMouseDown={() => handleAddManualPart(r.key, result)}
+                              className="flex items-center gap-2 px-3 py-2 cursor-pointer text-[0.8rem] text-navy hover:bg-cream border-b border-powder-blue last:border-b-0"
+                            >
+                              {result.poster_path && (
+                                <img src={getPosterUrl(result.poster_path, 'w92')} alt={result.title} className="w-6 h-9 object-cover rounded-sm shrink-0" />
+                              )}
+                              <span className="flex-1">{result.title}</span>
+                              {result.release_date && <span className="text-warm-gray">({result.release_date.split('-')[0]})</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Added films */}
+                    {entry.parts.length > 0 && (
+                      <div className="mt-2">
+                        {entry.parts.map((part, idx) => (
+                          <div key={idx} className="flex items-center justify-between py-0.5 text-[0.75rem]">
+                            <span className="text-navy">
+                              {part.title}
+                              {part.release_date && <span className="text-warm-gray ml-1">({part.release_date.split('-')[0]})</span>}
+                            </span>
+                            <button
+                              onClick={() => handleRemoveManualPart(r.key, idx)}
+                              className="text-warm-gray hover:text-dusty-rose bg-transparent border-none cursor-pointer ml-2 font-serif text-[0.75rem]"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => handleConfirmManual(r.key)}
+                          className="mt-2 bg-powder-blue text-navy border-none px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem] font-bold"
+                        >
+                          Expand into {entry.parts.length} film{entry.parts.length !== 1 ? 's' : ''}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
