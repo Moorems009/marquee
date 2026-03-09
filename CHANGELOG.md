@@ -12,6 +12,15 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.57.0] - 2026-03-09
+
+### feat (TV season improvements)
+- `EditMovieModal`: title autocomplete now searches TV shows (via TMDB) when editing a `tv_season` item; selecting a result pre-fills show name, creator, genre, and poster
+- `ImportCSVModal`: CSV `Type` column now accepts `TV` (in addition to `tv_season`); title column named `TV` is recognized as the title field; season number auto-extracted from title patterns like `"Andor Season 1"` (strips suffix, stores `season_number`); `Batman the Animated Series` and similar TV titles no longer incorrectly flagged as collections
+
+---
+
+
 ## [0.56.0] - 2026-03-09
 
 ### feat (TV season support)

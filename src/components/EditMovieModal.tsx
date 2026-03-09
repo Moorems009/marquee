@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Movie, Label, TMDBResult } from '@/lib/types'
+import { Movie, Label, TMDBResult, TVShowResult } from '@/lib/types'
 import { inputStyle, fieldLabelStyle } from '@/lib/styles'
-import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl } from '@/lib/tmdb'
+import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl, searchTVShows, getTVDetails } from '@/lib/tmdb'
 
 type Props = {
   movie: Movie
@@ -39,6 +39,8 @@ export default function EditMovieModal({
   const [showLabelDropdown, setShowLabelDropdown] = useState(false)
   const [tmdbResults, setTmdbResults] = useState<TMDBResult[]>([])
   const [showTmdbDropdown, setShowTmdbDropdown] = useState(false)
+  const [tvResults, setTvResults] = useState<TVShowResult[]>([])
+  const [showTvDropdown, setShowTvDropdown] = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function handleLabelInput(value: string) {
@@ -62,13 +64,19 @@ export default function EditMovieModal({
     if (searchTimeout.current) clearTimeout(searchTimeout.current)
     searchTimeout.current = setTimeout(async () => {
       if (value.length < 3) {
-        setTmdbResults([])
-        setShowTmdbDropdown(false)
+        setTmdbResults([]); setShowTmdbDropdown(false)
+        setTvResults([]); setShowTvDropdown(false)
         return
       }
-      const results = await searchMovies(value)
-      setTmdbResults(results)
-      setShowTmdbDropdown(true)
+      if (movie.item_type === 'tv_season') {
+        const results = await searchTVShows(value)
+        setTvResults(results)
+        setShowTvDropdown(true)
+      } else {
+        const results = await searchMovies(value)
+        setTmdbResults(results)
+        setShowTmdbDropdown(true)
+      }
     }, 300)
   }
 
@@ -91,6 +99,24 @@ export default function EditMovieModal({
     if (director) updates.creator = director
     if (mpaa_rating !== undefined) updates.mpaa_rating = mpaa_rating
     if (genre !== undefined) updates.genre = genre
+
+    setEditData(updates)
+  }
+
+  async function handleSelectTVShow(result: TVShowResult) {
+    setShowTvDropdown(false)
+    setTvResults([])
+
+    const updates: Partial<Movie> = {
+      ...editData,
+      title: result.name,
+      poster_url: result.poster_path ? getPosterUrl(result.poster_path) : editData.poster_url
+    }
+
+    const details = await getTVDetails(result.id)
+    if (details.creator) updates.creator = details.creator
+    if (details.genre) updates.genre = details.genre
+    if (!result.poster_path && details.poster_path) updates.poster_url = getPosterUrl(details.poster_path)
 
     setEditData(updates)
   }
@@ -125,7 +151,7 @@ export default function EditMovieModal({
                 type="text"
                 value={editData.title || ''}
                 onChange={(e) => handleTitleChange(e.target.value)}
-                onBlur={() => setTimeout(() => setShowTmdbDropdown(false), 150)}
+                onBlur={() => setTimeout(() => { setShowTmdbDropdown(false); setShowTvDropdown(false) }, 150)}
                 className={inputStyle}
               />
               {showTmdbDropdown && tmdbResults.length > 0 && (
@@ -148,6 +174,33 @@ export default function EditMovieModal({
                         {result.release_date && (
                           <span className="text-warm-gray ml-2">
                             ({result.release_date.split('-')[0]})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {showTvDropdown && tvResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-200 shadow-md">
+                  {tvResults.map((result) => (
+                    <div
+                      key={result.id}
+                      onMouseDown={() => handleSelectTVShow(result)}
+                      className="flex items-center gap-3 px-3 py-2 cursor-pointer border-b border-powder-blue text-sm text-navy hover:bg-cream"
+                    >
+                      {result.poster_path && (
+                        <img
+                          src={getPosterUrl(result.poster_path, 'w92')}
+                          alt={result.name}
+                          className="w-8 h-12 object-cover rounded-sm"
+                        />
+                      )}
+                      <div>
+                        <span className="font-bold">{result.name}</span>
+                        {result.first_air_date && (
+                          <span className="text-warm-gray ml-2">
+                            ({result.first_air_date.split('-')[0]})
                           </span>
                         )}
                       </div>

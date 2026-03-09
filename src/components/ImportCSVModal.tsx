@@ -86,6 +86,23 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     return /\b(collection|trilogy|saga|series)\b/i.test(title)
   }
 
+  function normType(raw: string): string {
+    return raw.toLowerCase().replace(/[\s_-]/g, '')
+  }
+
+  function isTVType(raw: string | undefined): boolean {
+    const n = normType(raw || '')
+    return n === 'tv' || n === 'tvseason'
+  }
+
+  function parseSeasonFromTitle(title: string): { cleanTitle: string; seasonNumber: number | null } {
+    const match = title.match(/\s+season\s+(\d+)\s*$/i)
+    if (match) {
+      return { cleanTitle: title.slice(0, match.index).trim(), seasonNumber: parseInt(match[1]) }
+    }
+    return { cleanTitle: title, seasonNumber: null }
+  }
+
   function parseCSV(text: string): CSVRow[] {
     function splitCSVLine(line: string): string[] {
       const values: string[] = []
@@ -109,15 +126,27 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
       const values = splitCSVLine(line)
       const row: Record<string, string> = {}
       headers.forEach((h, i) => { row[h] = values[i] || '' })
+      const rawType = row['type'] || ''
+      // Support a column named "TV" as the title field
+      let title = row['title'] || row['name'] || row['tv'] || ''
+      let season = row['season'] || ''
+      // Auto-extract season number from title (e.g. "Andor Season 1" → title "Andor", season 1)
+      if (isTVType(rawType) && !season) {
+        const parsed = parseSeasonFromTitle(title)
+        if (parsed.seasonNumber !== null) {
+          title = parsed.cleanTitle
+          season = String(parsed.seasonNumber)
+        }
+      }
       return {
-        title: row['title'] || row['name'] || '',
+        title,
         director: row['director'] || '',
         year: row['year'] || '',
         format: row['format'] || '',
         imprint: row['imprint'] || '',
         labels: row['labels'] || '',
-        type: row['type'] || '',
-        season: row['season'] || '',
+        type: rawType,
+        season,
       }
     }).filter((r) => r.title.length > 0)
   }
@@ -143,7 +172,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
           : !normalizeFormat(row.format)
           ? `Unknown format "${row.format}" — will use fallback`
           : undefined
-        const isTVSeason = row.type?.toLowerCase().replace(/[\s_-]/g, '') === 'tvseason'
+        const isTVSeason = isTVType(row.type)
         const isCollection = !isDuplicate && !isTVSeason && isCollectionRow(row.title)
         return {
           key,
@@ -355,7 +384,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
 
   async function importRow(row: ImportRow, userId: string): Promise<string | 'error'> {
     const { row: r } = row
-    const isTVSeason = r.type?.toLowerCase().replace(/[\s_-]/g, '') === 'tvseason'
+    const isTVSeason = isTVType(r.type)
     let creator = r.director || ''
     let posterUrl = null
     let mpaaRating: string | null = null
