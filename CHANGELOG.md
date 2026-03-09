@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.46.0] - 2026-03-09
+
+### fix
+- TMDB collection lookup now tries multiple normalized queries in sequence before giving up — strips count/keyword suffixes ("6-Film Collection", "Trilogy", "Saga", etc.) and for subtitle patterns like "Batman: Dark Knight Trilogy" also tries the text after and before the colon; significantly reduces "not found on TMDB" false negatives for common collection title formats
+
+---
+
+
 ## [0.45.0] - 2026-03-09
 
 ### feat

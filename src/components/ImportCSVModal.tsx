@@ -150,6 +150,51 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     reader.readAsText(file)
   }
 
+  // Generate a list of progressively-stripped search queries for a collection title.
+  // TMDB collection names rarely include "Trilogy", "6-Film Collection", etc.
+  function getCollectionSearchQueries(title: string): string[] {
+    const queries: string[] = [title]
+
+    // Strip trailing count + keyword patterns, e.g. "6-Film Collection", "4 Film Collection",
+    // "Film Collection", "Collection", "Trilogy", "Saga", "Series", "Extended Edition"
+    const stripped = title
+      .replace(/\s+\d+[-\s]?Film\s+Collection\b.*/i, '')
+      .replace(/\s+Film\s+Collection\b.*/i, '')
+      .replace(/\s+(?:Collection|Trilogy|Saga|Series)\b.*/i, '')
+      .replace(/\s*:?\s*Extended\s+Edition\b.*/i, '')
+      .trim()
+
+    if (stripped && stripped !== title) {
+      queries.push(stripped)
+      // For "X: Y" subtitles also try just "Y" and just "X"
+      const colonIdx = stripped.indexOf(':')
+      if (colonIdx !== -1) {
+        const afterColon = stripped.slice(colonIdx + 1).trim()
+        const beforeColon = stripped.slice(0, colonIdx).trim()
+        if (afterColon) queries.push(afterColon)
+        if (beforeColon) queries.push(beforeColon)
+      }
+    }
+
+    return [...new Set(queries)]
+  }
+
+  // Try each normalized query in sequence until TMDB returns collection parts.
+  async function findCollectionParts(title: string): Promise<CollectionPart[]> {
+    for (const query of getCollectionSearchQueries(title)) {
+      try {
+        const results = await searchCollection(query)
+        if (results.length > 0) {
+          const parts = await getCollectionParts(results[0].id)
+          if (parts.length > 0) return parts
+        }
+      } catch {
+        // try next query
+      }
+    }
+    return []
+  }
+
   // Apply the global collection resolution choice.
   // Collections that can't be matched on TMDB remain as 'collection' with tmdbNotFound: true
   // so the user can review and keep them individually.
@@ -165,17 +210,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         collectionRows
           .filter(r => !r.row.title.includes(' / '))
           .map(async (r) => {
-            try {
-              const collections = await searchCollection(r.row.title)
-              if (collections.length > 0) {
-                const parts = await getCollectionParts(collections[0].id)
-                tmdbPartsMap[r.key] = parts.length > 0 ? parts : []
-              } else {
-                tmdbPartsMap[r.key] = []
-              }
-            } catch {
-              tmdbPartsMap[r.key] = []
-            }
+            tmdbPartsMap[r.key] = await findCollectionParts(r.row.title)
           })
       )
     }
