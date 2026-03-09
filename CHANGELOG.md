@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.43.0] - 2026-03-09
+
+### perf
+- CSV import now processes rows in parallel batches of 5 instead of sequentially; auth.getUser() called once per import instead of once per row — significantly reduces import time for large libraries
+
+---
+
+
 ## [0.42.0] - 2026-03-09
 
 ### feat

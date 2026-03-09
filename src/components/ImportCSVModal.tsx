@@ -148,11 +148,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     return results[0]
   }
 
-  async function importRow(importRow: ImportRow): Promise<string | 'error'> {
-    const { data: authData } = await supabase.auth.getUser()
-    const user = authData.user
-    if (!user) return 'error'
-
+  async function importRow(importRow: ImportRow, userId: string): Promise<string | 'error'> {
     const { row } = importRow
     let director = row.director || ''
     let posterUrl = null
@@ -193,7 +189,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         poster_url: posterUrl,
         mpaa_rating: mpaaRating,
         genre,
-        user_id: user.id
+        user_id: userId
       }])
       .select()
       .single()
@@ -206,7 +202,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         const { data: existingLabel } = await supabase
           .from('labels')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .ilike('name', name)
           .single()
 
@@ -215,7 +211,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         if (!labelId) {
           const { data: newLabel } = await supabase
             .from('labels')
-            .insert([{ name, user_id: user.id }])
+            .insert([{ name, user_id: userId }])
             .select()
             .single()
           labelId = newLabel?.id
@@ -234,26 +230,36 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
 
   async function runImport(rowsToImport: ImportRow[]) {
     setIsImporting(true)
+
+    const { data: authData } = await supabase.auth.getUser()
+    const userId = authData.user?.id
+    if (!userId) { setIsImporting(false); return }
+
     let imported = 0
     let skipped = 0
     let errors = 0
     const importedIds: string[] = []
 
-    const total = rowsToImport.filter((r) => r.status === 'pending').length
+    const pendingIndices = rowsToImport.map((r, i) => r.status === 'pending' ? i : -1).filter(i => i !== -1)
+    const total = pendingIndices.length
     let current = 0
     setProgress({ current: 0, total })
 
     const updatedRows = [...rowsToImport]
+    skipped = rowsToImport.filter(r => r.status === 'duplicate').length
 
-    for (let i = 0; i < updatedRows.length; i++) {
-      if (updatedRows[i].status === 'pending') {
-        updatedRows[i] = { ...updatedRows[i], status: 'importing' }
-        setRows([...updatedRows])
+    const BATCH_SIZE = 5
+    for (let b = 0; b < pendingIndices.length; b += BATCH_SIZE) {
+      const batch = pendingIndices.slice(b, b + BATCH_SIZE)
 
-        const result = await importRow(updatedRows[i])
+      batch.forEach(i => { updatedRows[i] = { ...updatedRows[i], status: 'importing' } })
+      setRows([...updatedRows])
+
+      const results = await Promise.all(batch.map(i => importRow(updatedRows[i], userId)))
+
+      results.forEach((result, bi) => {
+        const i = batch[bi]
         current++
-        setProgress({ current, total })
-
         if (result !== 'error') {
           imported++
           importedIds.push(result)
@@ -262,10 +268,10 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
           errors++
           updatedRows[i] = { ...updatedRows[i], status: 'error', message: 'Failed to import' }
         }
-        setRows([...updatedRows])
-      } else if (updatedRows[i].status === 'duplicate') {
-        skipped++
-      }
+      })
+
+      setProgress({ current, total })
+      setRows([...updatedRows])
     }
 
     setSummary({ imported, skipped, errors })
