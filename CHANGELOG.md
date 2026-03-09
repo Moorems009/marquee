@@ -12,6 +12,17 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.51.0] - 2026-03-09
+
+### refactor
+- Extract inline collection review UI from `ImportCSVModal` into a dedicated `CollectionReviewCard` component (handles film list, clear-all, replace-with-collection search, and add-individual-film search)
+- Extract inline not-found collection UI from `ImportCSVModal` into a dedicated `CollectionNotFoundCard` component (handles manual film search, added-films list, keep-as-single-entry, and confirm-expand)
+- Export `CollectionPart`, `ImportStatus`, and `ImportRow` types from `ImportCSVModal` for use by child components
+- Remove `manualEntries` and `collectionSearches` state and related handlers from `ImportCSVModal`; all per-row search state now lives inside the extracted components
+
+---
+
+
 ## [0.50.0] - 2026-03-09
 
 ### feat

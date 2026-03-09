@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase'
 import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl, searchCollection, getCollectionParts } from '@/lib/tmdb'
 import { Movie } from '@/lib/types'
 import { inputStyle } from '@/lib/styles'
+import CollectionReviewCard from './CollectionReviewCard'
+import CollectionNotFoundCard from './CollectionNotFoundCard'
 
 type CSVRow = {
   title: string
@@ -15,16 +17,16 @@ type CSVRow = {
   labels?: string
 }
 
-type CollectionPart = {
+export type CollectionPart = {
   id: number
   title: string
   release_date: string
   poster_path?: string
 }
 
-type ImportStatus = 'pending' | 'duplicate' | 'importing' | 'done' | 'error' | 'collection' | 'reviewing'
+export type ImportStatus = 'pending' | 'duplicate' | 'importing' | 'done' | 'error' | 'collection' | 'reviewing'
 
-type ImportRow = {
+export type ImportRow = {
   key: string
   row: CSVRow
   status: ImportStatus
@@ -35,19 +37,6 @@ type ImportRow = {
   tmdbNotFound?: boolean
 }
 
-type ManualEntry = {
-  search: string
-  results: Array<{ id: number; title: string; release_date: string; poster_path?: string }>
-  searching: boolean
-  parts: CollectionPart[]
-}
-
-type CollectionSearchEntry = {
-  search: string
-  results: Array<{ id: number; name: string; poster_path: string | null }>
-  searching: boolean
-  loadingId: number | null
-}
 
 type SummaryData = {
   importedStandalone: number
@@ -78,11 +67,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
   const [collectionResolution, setCollectionResolution] = useState<'expand' | 'keep'>('expand')
   const [useCollectionLabel, setUseCollectionLabel] = useState(true)
   const collectionsExpandedRef = useRef(0)
-  const [manualEntries, setManualEntries] = useState<Record<string, ManualEntry>>({})
-  const manualSearchTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const [reviewParts, setReviewParts] = useState<Record<string, CollectionPart[]>>({})
-  const [collectionSearches, setCollectionSearches] = useState<Record<string, CollectionSearchEntry>>({})
-  const collectionSearchTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   function normalizeFormat(raw: string): string | null {
     const val = raw.trim().toLowerCase().replace(/[\s\-_.]/g, '')
@@ -287,11 +272,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     setFetchingCollections(false)
   }
 
-  function handleRemoveReviewPart(key: string, idx: number) {
-    setReviewParts(prev => ({ ...prev, [key]: prev[key].filter((_, i) => i !== idx) }))
-  }
-
-  function handleKeepReviewAsIs(key: string) {
+  function handleKeepCollection(key: string) {
     setRows(prev => prev.map(r => r.key === key ? { ...r, status: 'pending' as ImportStatus } : r))
   }
 
@@ -326,87 +307,13 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     setRows(updatedRows)
   }
 
-  function handleCollectionSearch(key: string, value: string) {
-    setCollectionSearches(prev => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? { results: [], searching: false, loadingId: null }), search: value }
-    }))
-    if (collectionSearchTimeouts.current[key]) clearTimeout(collectionSearchTimeouts.current[key])
-    if (value.length < 2) {
-      setCollectionSearches(prev => ({ ...prev, [key]: { ...prev[key], results: [] } }))
-      return
-    }
-    collectionSearchTimeouts.current[key] = setTimeout(async () => {
-      setCollectionSearches(prev => ({ ...prev, [key]: { ...prev[key], searching: true } }))
-      const results = await searchCollection(value)
-      setCollectionSearches(prev => ({ ...prev, [key]: { ...prev[key], searching: false, results: results.slice(0, 5) } }))
-    }, 300)
-  }
-
-  async function handleReplaceWithCollection(key: string, collectionId: number) {
-    setCollectionSearches(prev => ({ ...prev, [key]: { ...prev[key], results: [], search: '', loadingId: collectionId } }))
-    const parts = await getCollectionParts(collectionId)
-    setReviewParts(prev => ({ ...prev, [key]: parts }))
-    setCollectionSearches(prev => ({ ...prev, [key]: { ...prev[key], loadingId: null } }))
-  }
-
-  function handleAddToReview(key: string, result: { id: number; title: string; release_date: string; poster_path?: string }) {
-    setReviewParts(prev => {
-      const current = prev[key] || []
-      if (current.some(p => p.id === result.id)) return prev
-      return { ...prev, [key]: [...current, result] }
-    })
-    setManualEntries(prev => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? { search: '', results: [], searching: false, parts: [] }), search: '', results: [] }
-    }))
-  }
-
-  function handleKeepAsIs(key: string) {
-    setRows(prev => prev.map(r => r.key === key ? { ...r, status: 'pending' as ImportStatus } : r))
-  }
-
-  function handleManualSearch(key: string, value: string) {
-    setManualEntries(prev => ({
-      ...prev,
-      [key]: { ...(prev[key] ?? { results: [], searching: false, parts: [] }), search: value }
-    }))
-    if (manualSearchTimeouts.current[key]) clearTimeout(manualSearchTimeouts.current[key])
-    if (value.length < 2) {
-      setManualEntries(prev => ({ ...prev, [key]: { ...prev[key], results: [] } }))
-      return
-    }
-    manualSearchTimeouts.current[key] = setTimeout(async () => {
-      setManualEntries(prev => ({ ...prev, [key]: { ...prev[key], searching: true } }))
-      const results = await searchMovies(value)
-      setManualEntries(prev => ({ ...prev, [key]: { ...prev[key], searching: false, results: results.slice(0, 5) } }))
-    }, 300)
-  }
-
-  function handleAddManualPart(key: string, result: { id: number; title: string; release_date: string; poster_path?: string }) {
-    setManualEntries(prev => {
-      const entry = prev[key] ?? { search: '', results: [], searching: false, parts: [] }
-      if (entry.parts.some(p => p.id === result.id)) return prev
-      return { ...prev, [key]: { ...entry, search: '', results: [], parts: [...entry.parts, result] } }
-    })
-  }
-
-  function handleRemoveManualPart(key: string, idx: number) {
-    setManualEntries(prev => {
-      const entry = prev[key]
-      if (!entry) return prev
-      return { ...prev, [key]: { ...entry, parts: entry.parts.filter((_, i) => i !== idx) } }
-    })
-  }
-
-  function handleConfirmManual(key: string) {
-    const entry = manualEntries[key]
+  function handleConfirmManual(key: string, parts: CollectionPart[]) {
     const rowIndex = rows.findIndex(r => r.key === key)
-    if (rowIndex === -1 || !entry || entry.parts.length === 0) return
+    if (rowIndex === -1 || parts.length === 0) return
     const originalRow = rows[rowIndex]
     const labelName = useCollectionLabel ? originalRow.collectionLabel : undefined
     collectionsExpandedRef.current++
-    const newRows: ImportRow[] = entry.parts.map(part => {
+    const newRows: ImportRow[] = parts.map(part => {
       const partYear = part.release_date ? part.release_date.split('-')[0] : originalRow.row.year
       const labels = labelName
         ? [originalRow.row.labels, labelName].filter(Boolean).join(';')
@@ -728,132 +635,15 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
               Remove any films you don&apos;t want imported. Collections with all films removed will be kept as a single entry.
             </p>
             <div className="flex flex-col gap-3">
-              {reviewingCollections.map(r => {
-                const parts = reviewParts[r.key] || []
-                const entry = manualEntries[r.key] ?? { search: '', results: [], searching: false, parts: [] }
-                return (
-                  <div key={r.key} className="border-b border-powder-blue last:border-b-0 pb-3 last:pb-0">
-                    <div className="flex items-center justify-between gap-3 mb-1.5">
-                      <span className="text-navy text-[0.8rem] font-bold">{r.row.title}</span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {parts.length > 0 && (
-                          <button
-                            onClick={() => setReviewParts(prev => ({ ...prev, [r.key]: [] }))}
-                            className="bg-white text-dusty-rose border border-dusty-rose px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem]"
-                          >
-                            Clear all
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleKeepReviewAsIs(r.key)}
-                          className="bg-white text-warm-gray border border-warm-gray px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem]"
-                        >
-                          Keep as single entry
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-0.5 mb-1.5">
-                      {parts.map((part, idx) => (
-                        <div key={idx} className="flex items-center gap-2 py-0.5">
-                          {part.poster_path && (
-                            <img src={getPosterUrl(part.poster_path, 'w92')} alt={part.title} className="w-5 h-7 object-cover rounded-sm shrink-0" />
-                          )}
-                          <span className="text-navy text-[0.75rem] flex-1">
-                            {part.title}
-                            {part.release_date && <span className="text-warm-gray ml-1">({part.release_date.split('-')[0]})</span>}
-                          </span>
-                          <button
-                            onClick={() => handleRemoveReviewPart(r.key, idx)}
-                            className="text-warm-gray hover:text-dusty-rose bg-transparent border-none cursor-pointer font-serif text-[0.75rem] shrink-0"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                      {parts.length === 0 && (
-                        <p className="text-warm-gray text-[0.72rem] italic m-0">All films removed — will be kept as a single entry</p>
-                      )}
-                    </div>
-                    {/* Replace with a different TMDB collection */}
-                    {(() => {
-                      const cs = collectionSearches[r.key] ?? { search: '', results: [], searching: false, loadingId: null }
-                      return (
-                        <div className="relative mb-1.5">
-                          <input
-                            type="text"
-                            placeholder="Replace with a different TMDB collection…"
-                            value={cs.search}
-                            onChange={(e) => handleCollectionSearch(r.key, e.target.value)}
-                            onBlur={() => setTimeout(() => setCollectionSearches(prev => ({
-                              ...prev,
-                              [r.key]: { ...(prev[r.key] ?? { search: '', searching: false, loadingId: null }), results: [] }
-                            })), 150)}
-                            className="w-full border border-powder-blue rounded-sm px-3 py-1.5 font-serif text-[0.8rem] text-navy bg-white outline-none"
-                          />
-                          {(cs.searching || cs.loadingId !== null) && (
-                            <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b px-3 py-2 text-[0.75rem] text-warm-gray italic">
-                              {cs.loadingId !== null ? 'Loading collection…' : 'Searching…'}
-                            </div>
-                          )}
-                          {!cs.searching && cs.loadingId === null && cs.results.length > 0 && (
-                            <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-10 shadow-md">
-                              {cs.results.map(result => (
-                                <div
-                                  key={result.id}
-                                  onMouseDown={() => handleReplaceWithCollection(r.key, result.id)}
-                                  className="flex items-center gap-2 px-3 py-2 cursor-pointer text-[0.8rem] text-navy hover:bg-cream border-b border-powder-blue last:border-b-0"
-                                >
-                                  {result.poster_path && (
-                                    <img src={getPosterUrl(result.poster_path, 'w92')} alt={result.name} className="w-6 h-9 object-cover rounded-sm shrink-0" />
-                                  )}
-                                  <span className="flex-1">{result.name}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })()}
-
-                    {/* Add individual films */}
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Add an individual film…"
-                        value={entry.search}
-                        onChange={(e) => handleManualSearch(r.key, e.target.value)}
-                        onBlur={() => setTimeout(() => setManualEntries(prev => ({
-                          ...prev,
-                          [r.key]: { ...(prev[r.key] ?? { search: '', searching: false, parts: [] }), results: [] }
-                        })), 150)}
-                        className="w-full border border-powder-blue rounded-sm px-3 py-1.5 font-serif text-[0.8rem] text-navy bg-white outline-none"
-                      />
-                      {entry.searching && (
-                        <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b px-3 py-2 text-[0.75rem] text-warm-gray italic">
-                          Searching…
-                        </div>
-                      )}
-                      {!entry.searching && entry.results.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-10 shadow-md">
-                          {entry.results.map(result => (
-                            <div
-                              key={result.id}
-                              onMouseDown={() => handleAddToReview(r.key, result)}
-                              className="flex items-center gap-2 px-3 py-2 cursor-pointer text-[0.8rem] text-navy hover:bg-cream border-b border-powder-blue last:border-b-0"
-                            >
-                              {result.poster_path && (
-                                <img src={getPosterUrl(result.poster_path, 'w92')} alt={result.title} className="w-6 h-9 object-cover rounded-sm shrink-0" />
-                              )}
-                              <span className="flex-1">{result.title}</span>
-                              {result.release_date && <span className="text-warm-gray">({result.release_date.split('-')[0]})</span>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
+              {reviewingCollections.map(r => (
+                <CollectionReviewCard
+                  key={r.key}
+                  row={r}
+                  parts={reviewParts[r.key] || []}
+                  onPartsChange={(parts) => setReviewParts(prev => ({ ...prev, [r.key]: parts }))}
+                  onKeepAsIs={() => handleKeepCollection(r.key)}
+                />
+              ))}
             </div>
             <button
               onClick={handleConfirmAllReviews}
@@ -875,85 +665,15 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
               {useCollectionLabel && <span className="italic"> Collection title will be applied as a label.</span>}
             </p>
             <div className="flex flex-col gap-4">
-              {notFoundCollections.map(r => {
-                const entry = manualEntries[r.key] ?? { search: '', results: [], searching: false, parts: [] }
-                return (
-                  <div key={r.key} className="border-b border-powder-blue last:border-b-0 pb-4 last:pb-0">
-                    <div className="flex items-center justify-between gap-3 mb-2">
-                      <span className="text-navy text-[0.8rem] font-bold">{r.row.title}</span>
-                      <button
-                        onClick={() => handleKeepAsIs(r.key)}
-                        className="bg-white text-warm-gray border border-warm-gray px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem] shrink-0"
-                      >
-                        Keep as single entry
-                      </button>
-                    </div>
-
-                    {/* Mini film search */}
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Search for a film to add…"
-                        value={entry.search}
-                        onChange={(e) => handleManualSearch(r.key, e.target.value)}
-                        onBlur={() => setTimeout(() => setManualEntries(prev => ({
-                          ...prev,
-                          [r.key]: { ...(prev[r.key] ?? { search: '', searching: false, parts: [] }), results: [] }
-                        })), 150)}
-                        className="w-full border border-powder-blue rounded-sm px-3 py-1.5 font-serif text-[0.8rem] text-navy bg-white outline-none"
-                      />
-                      {entry.searching && (
-                        <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b px-3 py-2 text-[0.75rem] text-warm-gray italic">
-                          Searching…
-                        </div>
-                      )}
-                      {!entry.searching && entry.results.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-10 shadow-md">
-                          {entry.results.map(result => (
-                            <div
-                              key={result.id}
-                              onMouseDown={() => handleAddManualPart(r.key, result)}
-                              className="flex items-center gap-2 px-3 py-2 cursor-pointer text-[0.8rem] text-navy hover:bg-cream border-b border-powder-blue last:border-b-0"
-                            >
-                              {result.poster_path && (
-                                <img src={getPosterUrl(result.poster_path, 'w92')} alt={result.title} className="w-6 h-9 object-cover rounded-sm shrink-0" />
-                              )}
-                              <span className="flex-1">{result.title}</span>
-                              {result.release_date && <span className="text-warm-gray">({result.release_date.split('-')[0]})</span>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Added films */}
-                    {entry.parts.length > 0 && (
-                      <div className="mt-2">
-                        {entry.parts.map((part, idx) => (
-                          <div key={idx} className="flex items-center justify-between py-0.5 text-[0.75rem]">
-                            <span className="text-navy">
-                              {part.title}
-                              {part.release_date && <span className="text-warm-gray ml-1">({part.release_date.split('-')[0]})</span>}
-                            </span>
-                            <button
-                              onClick={() => handleRemoveManualPart(r.key, idx)}
-                              className="text-warm-gray hover:text-dusty-rose bg-transparent border-none cursor-pointer ml-2 font-serif text-[0.75rem]"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => handleConfirmManual(r.key)}
-                          className="mt-2 bg-powder-blue text-navy border-none px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem] font-bold"
-                        >
-                          Expand into {entry.parts.length} film{entry.parts.length !== 1 ? 's' : ''}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+              {notFoundCollections.map(r => (
+                <CollectionNotFoundCard
+                  key={r.key}
+                  row={r}
+                  useCollectionLabel={useCollectionLabel}
+                  onKeepAsIs={() => handleKeepCollection(r.key)}
+                  onConfirm={(parts) => handleConfirmManual(r.key, parts)}
+                />
+              ))}
             </div>
           </div>
         )}
