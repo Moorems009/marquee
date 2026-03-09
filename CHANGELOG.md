@@ -12,6 +12,15 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.53.2] - 2026-03-09
+
+### fix
+- Add `autoPlay muted playsInline` attributes to scanner video element — required by mobile browsers (especially iOS Safari and Firefox for Android) to allow video playback from getUserMedia
+- Differentiate scanner error states: `NotAllowedError` → permission denied message, `NotFoundError` → no camera message, other errors → message includes the actual error text for easier debugging
+
+---
+
+
 ## [0.53.1] - 2026-03-09
 
 ### fix

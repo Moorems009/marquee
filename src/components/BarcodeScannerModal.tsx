@@ -16,7 +16,7 @@ type Props = {
   onClose: () => void
 }
 
-type ScanState = 'scanning' | 'found' | 'looking_up' | 'not_found' | 'error' | 'no_camera'
+type ScanState = 'scanning' | 'found' | 'looking_up' | 'not_found' | 'error' | 'no_camera' | 'permission_denied'
 
 export default function BarcodeScannerModal({ onScan, onClose }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -74,8 +74,18 @@ export default function BarcodeScannerModal({ onScan, onClose }: Props) {
         else controls.stop()
       } catch (e) {
         if (!stopped) {
-          console.error('Scanner error', e)
-          setScanState('no_camera')
+          const name = (e instanceof Error) ? e.name : ''
+          if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+            setScanState('permission_denied')
+            setStatusText('Camera access was denied. Please allow camera access and try again.')
+          } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+            setScanState('no_camera')
+            setStatusText('No camera found on this device.')
+          } else {
+            console.error('Scanner error', e)
+            setScanState('no_camera')
+            setStatusText(`Could not start camera${e instanceof Error ? `: ${e.message}` : '.'}`)
+          }
         }
       }
     }
@@ -88,7 +98,7 @@ export default function BarcodeScannerModal({ onScan, onClose }: Props) {
     }
   }, [onScan])
 
-  const isTerminal = scanState === 'found' || scanState === 'not_found' || scanState === 'error' || scanState === 'no_camera'
+  const isTerminal = scanState === 'found' || scanState === 'not_found' || scanState === 'error' || scanState === 'no_camera' || scanState === 'permission_denied'
 
   return (
     <div
@@ -112,7 +122,7 @@ export default function BarcodeScannerModal({ onScan, onClose }: Props) {
         {/* Camera viewfinder */}
         {(scanState === 'scanning' || scanState === 'looking_up') && (
           <div className="relative w-full rounded overflow-hidden bg-black" style={{ aspectRatio: '4/3' }}>
-            <video ref={videoRef} className="w-full h-full object-cover" />
+            <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
             {/* Targeting overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div
