@@ -12,6 +12,18 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.55.0] - 2026-03-09
+
+### feat (schema migration — Option C)
+- Renamed Supabase table `movies` → `media_items`; all app queries updated
+- Renamed column `director` → `creator` throughout app; UI label updated to "Director / Showrunner"
+- Added `Movie = MediaItem` type alias for backward compatibility; `MediaItem` is now the canonical type
+- Added `item_type`, `show_title`, `season_number` fields to `MediaItem` type — groundwork for TV season support
+- `movie_labels` foreign key column renamed `movie_id` → `item_id`; all insert/delete queries updated
+
+---
+
+
 ## [0.54.0] - 2026-03-09
 
 ### feat

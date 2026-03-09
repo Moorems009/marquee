@@ -88,7 +88,7 @@ export default function EditMovieModal({
       getMovieRating(result.id),
       getMovieGenre(result.id)
     ])
-    if (director) updates.director = director
+    if (director) updates.creator = director
     if (mpaa_rating !== undefined) updates.mpaa_rating = mpaa_rating
     if (genre !== undefined) updates.genre = genre
 
@@ -156,11 +156,11 @@ export default function EditMovieModal({
             </div>
 
             <div>
-              <label className={fieldLabelStyle}>Director</label>
+              <label className={fieldLabelStyle}>Director / Showrunner</label>
               <input
                 type="text"
-                value={editData.director || ''}
-                onChange={(e) => setEditData({ ...editData, director: e.target.value })}
+                value={editData.creator || ''}
+                onChange={(e) => setEditData({ ...editData, creator: e.target.value })}
                 className={inputStyle}
               />
             </div>

@@ -25,7 +25,7 @@ export function useLabels() {
     const user = authData.user
 
     const [{ data: mlData, error: mlError }, { data: lData, error: lError }] = await Promise.all([
-      supabase.from('movie_labels').select('movie_id, label_id'),
+      supabase.from('movie_labels').select('item_id, label_id'),
       supabase.from('labels').select('id, name').eq('user_id', user?.id)
     ])
 
@@ -34,10 +34,10 @@ export function useLabels() {
       lData.forEach((l: Label) => { labelById[String(l.id)] = { ...l, id: String(l.id) } })
 
       const map: Record<string, Label[]> = {}
-      mlData.forEach((row: { movie_id: string; label_id: string }) => {
+      mlData.forEach((row: { item_id: string; label_id: string }) => {
         const label = labelById[String(row.label_id)]
         if (label) {
-          const key = String(row.movie_id)
+          const key = String(row.item_id)
           if (!map[key]) map[key] = []
           map[key].push(label)
         }
@@ -60,7 +60,7 @@ export function useLabels() {
   async function addLabelToMovie(movieId: string, label: Label) {
     const { error } = await supabase
       .from('movie_labels')
-      .insert([{ movie_id: movieId, label_id: label.id }])
+      .insert([{ item_id: movieId, label_id: label.id }])
 
     if (!error) {
       setMovieLabels(prev => {
@@ -76,7 +76,7 @@ export function useLabels() {
     const { error } = await supabase
       .from('movie_labels')
       .delete()
-      .eq('movie_id', movieId)
+      .eq('item_id', movieId)
       .eq('label_id', labelId)
 
     if (!error) {

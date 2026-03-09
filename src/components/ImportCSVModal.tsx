@@ -378,17 +378,18 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     }
 
     const { data: movieData, error: movieError } = await supabase
-      .from('movies')
+      .from('media_items')
       .insert([{
         title: r.title,
         year: r.year ? parseInt(r.year) : tmdbYear,
         format,
         imprint: r.imprint || null,
-        director: director || null,
+        creator: director || null,
         poster_url: posterUrl,
         mpaa_rating: mpaaRating,
         genre,
-        user_id: userId
+        user_id: userId,
+        item_type: 'movie'
       }])
       .select()
       .single()
@@ -407,7 +408,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
           labelId = newLabel?.id
         }
         if (labelId) {
-          await supabase.from('movie_labels').insert([{ movie_id: movieData.id, label_id: labelId }])
+          await supabase.from('movie_labels').insert([{ item_id: movieData.id, label_id: labelId }])
         }
       }
     }
@@ -490,7 +491,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         const existing = existingMovies.find(
           (m) => m.title.toLowerCase() === row.title.toLowerCase() && String(m.year) === String(row.year)
         )
-        if (existing) await supabase.from('movies').delete().eq('id', existing.id)
+        if (existing) await supabase.from('media_items').delete().eq('id', existing.id)
         updatedRows[i] = { ...updatedRows[i], status: 'pending' }
       }
     }
@@ -518,7 +519,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
       const existing = existingMovies.find(
         (m) => m.title.toLowerCase() === row.title.toLowerCase() && String(m.year) === String(row.year)
       )
-      if (existing) await supabase.from('movies').delete().eq('id', existing.id)
+      if (existing) await supabase.from('media_items').delete().eq('id', existing.id)
       updatedRows[currentDuplicateIndex] = { ...updatedRows[currentDuplicateIndex], status: 'pending' }
     }
     setRows(updatedRows)

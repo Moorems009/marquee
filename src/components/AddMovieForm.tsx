@@ -18,7 +18,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
   const [year, setYear] = useState('')
   const [format, setFormat] = useState('Blu-ray')
   const [imprint, setImprint] = useState('')
-  const [director, setDirector] = useState('')
+  const [creator, setCreator] = useState('')
   const [posterUrl, setPosterUrl] = useState('')
   const [mpaaRating, setMpaaRating] = useState('')
   const [genre, setGenre] = useState('')
@@ -60,7 +60,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
       getMovieRating(result.id),
       getMovieGenre(result.id)
     ])
-    if (directorName) setDirector(directorName)
+    if (directorName) setCreator(directorName)
     if (mpaa_rating) setMpaaRating(mpaa_rating)
     if (genreValue) setGenre(genreValue)
   }
@@ -70,7 +70,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
     setTitle(result.title)
     setYear(result.year ? String(result.year) : '')
     if (result.poster_url) setPosterUrl(result.poster_url)
-    if (result.director) setDirector(result.director)
+    if (result.director) setCreator(result.director)
     if (result.mpaa_rating) setMpaaRating(result.mpaa_rating)
     if (result.genre) setGenre(result.genre)
     if (result.format) setFormat(result.format)
@@ -98,8 +98,8 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
     const user = authData.user
 
     const { data: inserted, error } = await supabase
-      .from('movies')
-      .insert([{ title, year: parseInt(year), format, imprint, director, poster_url: posterUrl || null, mpaa_rating: mpaaRating || null, genre: genre || null, user_id: user?.id }])
+      .from('media_items')
+      .insert([{ title, year: parseInt(year), format, imprint, creator, poster_url: posterUrl || null, mpaa_rating: mpaaRating || null, genre: genre || null, user_id: user?.id, item_type: 'movie' }])
       .select('id')
       .single()
 
@@ -111,7 +111,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
       setYear('')
       setFormat('Blu-ray')
       setImprint('')
-      setDirector('')
+      setCreator('')
       setPosterUrl('')
       setMpaaRating('')
       setGenre('')
@@ -146,7 +146,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
       )}
       <form onSubmit={handleSubmit}>
 
-        {/* Row 1: Title | Director | Year */}
+        {/* Row 1: Title | Director / Showrunner | Year */}
         <div className="grid grid-cols-1 gap-3 mb-3 md:grid-cols-[3fr_2fr_1fr]">
           <div className="relative">
             <input
@@ -188,9 +188,9 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
           </div>
           <input
             type="text"
-            placeholder="Director"
-            value={director}
-            onChange={(e) => setDirector(e.target.value)}
+            placeholder="Director / Showrunner"
+            value={creator}
+            onChange={(e) => setCreator(e.target.value)}
             className={inputStyle}
           />
           <input

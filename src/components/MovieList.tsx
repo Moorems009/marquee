@@ -53,7 +53,7 @@ export default function MovieList({
   const filteredMovies = movies.filter((movie) => {
     if (search.trim()) {
       const q = search.toLowerCase()
-      if (!movie.title.toLowerCase().includes(q) && !(movie.director?.toLowerCase().includes(q))) return false
+      if (!movie.title.toLowerCase().includes(q) && !(movie.creator?.toLowerCase().includes(q))) return false
     }
     if (filterFormat && movie.format !== filterFormat) return false
     if (filterLabel) {
@@ -90,7 +90,7 @@ export default function MovieList({
       case 'year-asc':   return (a.year || 0) - (b.year || 0)
       case 'director': {
         const lastName = (d: string | null | undefined) => d ? (d.split(' ').pop() || d) : 'ZZZZ'
-        return lastName(a.director).localeCompare(lastName(b.director))
+        return lastName(a.creator).localeCompare(lastName(b.creator))
       }
       case 'format':     return a.format.localeCompare(b.format)
       case 'genre':      return (a.genre || '').localeCompare(b.genre || '')
@@ -169,7 +169,7 @@ export default function MovieList({
           <div className="flex flex-col gap-2 md:flex-row">
             <input
               type="text"
-              placeholder="Search title or director…"
+              placeholder="Search title or director / showrunner…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className={`${inputStyle} flex-1 min-w-0`}
@@ -312,8 +312,8 @@ export default function MovieList({
                 <div className="min-w-0">
                   <span className="font-bold text-navy">{movie.title}</span>
                   <span className="text-warm-gray ml-2 text-sm">({movie.year})</span>
-                  {movie.director && (
-                    <span className="text-warm-gray ml-2 text-sm">— {movie.director}</span>
+                  {movie.creator && (
+                    <span className="text-warm-gray ml-2 text-sm">— {movie.creator}</span>
                   )}
                   {movie.genre && (
                     <div className="text-xs text-warm-gray italic mt-0.5">{movie.genre}</div>

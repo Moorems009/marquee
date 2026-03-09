@@ -1,14 +1,20 @@
-export type Movie = {
+export type MediaItem = {
   id: string
   title: string
   year: number
   format: string
   imprint: string | null
-  director: string | null
+  creator: string | null
   poster_url: string | null
   mpaa_rating: string | null
   genre: string | null
+  item_type: 'movie' | 'tv_season'
+  show_title: string | null
+  season_number: number | null
 }
+
+// Backward-compat alias — prefer MediaItem in new code
+export type Movie = MediaItem
 
 export type Label = {
   id: string

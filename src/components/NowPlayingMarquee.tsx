@@ -110,7 +110,7 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds, nightMode, on
                   }}>
                     {movie.title}
                   </div>
-                  {(movie.year || movie.director) && (
+                  {(movie.year || movie.creator) && (
                     <div style={{
                       color: c.subtitle,
                       fontFamily: 'Georgia, serif',
@@ -118,7 +118,7 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds, nightMode, on
                       marginTop: '0.25rem',
                       fontStyle: 'italic'
                     }}>
-                      {[movie.year, movie.director].filter(Boolean).join(' · ')}
+                      {[movie.year, movie.creator].filter(Boolean).join(' · ')}
                     </div>
                   )}
                 </>

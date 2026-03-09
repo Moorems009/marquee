@@ -30,7 +30,7 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
   const [clearing, setClearing] = useState(false)
 
   async function handleRefreshTMDB() {
-    const needsData = movies.filter((m) => !m.mpaa_rating || !m.director || !m.poster_url || !m.genre)
+    const needsData = movies.filter((m) => !m.mpaa_rating || !m.creator || !m.poster_url || !m.genre)
     if (needsData.length === 0) {
       setRefreshSummary({ updated: 0, skipped: movies.length, notFound: [] })
       setRefreshState('done')
@@ -56,19 +56,19 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
 
         if (match) {
           const [creditsData, ratingData, genreData] = await Promise.all([
-            !movie.director ? getMovieCredits(match.id) : Promise.resolve({ director: null }),
+            !movie.creator ? getMovieCredits(match.id) : Promise.resolve({ director: null }),
             !movie.mpaa_rating ? getMovieRating(match.id) : Promise.resolve({ mpaa_rating: null }),
             !movie.genre ? getMovieGenre(match.id) : Promise.resolve({ genre: null })
           ])
 
-          const updates: Partial<{ director: string; poster_url: string; mpaa_rating: string; genre: string }> = {}
-          if (!movie.director && creditsData.director) updates.director = creditsData.director
+          const updates: Partial<{ creator: string; poster_url: string; mpaa_rating: string; genre: string }> = {}
+          if (!movie.creator && creditsData.director) updates.creator = creditsData.director
           if (!movie.poster_url && match.poster_path) updates.poster_url = getPosterUrl(match.poster_path)
           if (!movie.mpaa_rating && ratingData.mpaa_rating) updates.mpaa_rating = ratingData.mpaa_rating
           if (!movie.genre && genreData.genre) updates.genre = genreData.genre
 
           if (Object.keys(updates).length > 0) {
-            await supabase.from('movies').update(updates).eq('id', movie.id)
+            await supabase.from('media_items').update(updates).eq('id', movie.id)
             updated++
           } else {
             notFound.push(movie.title + (movie.year ? ' (' + movie.year + ')' : ''))
@@ -93,11 +93,11 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
     const user = authData.user
     if (!user) { setClearing(false); return }
 
-    const { data: userMovies } = await supabase.from('movies').select('id').eq('user_id', user.id)
+    const { data: userMovies } = await supabase.from('media_items').select('id').eq('user_id', user.id)
     if (userMovies && userMovies.length > 0) {
       const ids = userMovies.map((m: { id: string }) => m.id)
-      await supabase.from('movie_labels').delete().in('movie_id', ids)
-      await supabase.from('movies').delete().eq('user_id', user.id)
+      await supabase.from('movie_labels').delete().in('item_id', ids)
+      await supabase.from('media_items').delete().eq('user_id', user.id)
     }
 
     setClearing(false)
