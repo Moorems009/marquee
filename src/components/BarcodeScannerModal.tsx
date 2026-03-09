@@ -33,19 +33,11 @@ export default function BarcodeScannerModal({ onScan, onClose }: Props) {
         const { BrowserMultiFormatReader } = await import('@zxing/browser')
         const reader = new BrowserMultiFormatReader()
 
-        const devices = await BrowserMultiFormatReader.listVideoInputDevices()
-        if (devices.length === 0) {
-          setScanState('no_camera')
-          return
-        }
-
-        // Prefer rear camera on mobile
-        const rearDevice = devices.find(d =>
-          /back|rear|environment/i.test(d.label)
-        ) ?? devices[devices.length - 1]
-
-        const controls = await reader.decodeFromVideoDevice(
-          rearDevice.deviceId,
+        // Use decodeFromConstraints so the browser prompts for camera permission
+        // before we try to enumerate devices. facingMode: 'environment' selects
+        // the rear camera on mobile without needing a device list.
+        const controls = await reader.decodeFromConstraints(
+          { video: { facingMode: { ideal: 'environment' } } },
           videoRef.current!,
           async (result, err) => { // eslint-disable-line @typescript-eslint/no-unused-vars
             if (stopped || scannedRef.current) return

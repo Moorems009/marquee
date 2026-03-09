@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.53.1] - 2026-03-09
+
+### fix
+- Replace `listVideoInputDevices` + `decodeFromVideoDevice` with `decodeFromConstraints({ video: { facingMode: 'environment' } })` so the browser permission prompt fires correctly in Firefox and other browsers that withhold device enumeration until permission is granted
+
+---
+
+
 ## [0.53.0] - 2026-03-09
 
 ### feat
