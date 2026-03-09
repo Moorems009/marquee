@@ -129,6 +129,25 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     reader.readAsText(file)
   }
 
+  function normTitle(t: string) {
+    return t.toLowerCase().replace(/^(the |a |an )/i, '').replace(/[^a-z0-9\s]/g, '').trim()
+  }
+
+  function findBestMatch(results: Array<{ title: string; release_date: string; id: number; poster_path?: string }>, searchTitle: string, year?: string) {
+    if (results.length === 0) return null
+    const searchNorm = normTitle(searchTitle)
+    // Exact normalized match with year
+    if (year) {
+      const hit = results.find(r => normTitle(r.title) === searchNorm && r.release_date?.startsWith(year))
+      if (hit) return hit
+    }
+    // Exact normalized match without year constraint
+    const hit = results.find(r => normTitle(r.title) === searchNorm)
+    if (hit) return hit
+    // TMDB search handles typos well — trust top result
+    return results[0]
+  }
+
   async function importRow(importRow: ImportRow): Promise<string | 'error'> {
     const { data: authData } = await supabase.auth.getUser()
     const user = authData.user
@@ -139,18 +158,17 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     let posterUrl = null
     let mpaaRating: string | null = null
     let genre: string | null = null
+    let tmdbYear: number | null = null
     const normalizedFormat = row.format ? normalizeFormat(row.format) : null
     const format = normalizedFormat || fallbackFormat
 
     try {
       const results = await searchMovies(row.title)
-      const match = results.find((r: { title: string; release_date: string }) =>
-        r.title.toLowerCase() === row.title.toLowerCase() &&
-        (row.year ? r.release_date?.startsWith(row.year) : true)
-      ) || results[0]
+      const match = findBestMatch(results, row.title, row.year)
 
       if (match) {
         if (match.poster_path) posterUrl = getPosterUrl(match.poster_path)
+        if (match.release_date) tmdbYear = parseInt(match.release_date.split("-")[0])
         const [credits, ratingData, genreData] = await Promise.all([
           !director ? getMovieCredits(match.id) : Promise.resolve({ director: '' }),
           getMovieRating(match.id),

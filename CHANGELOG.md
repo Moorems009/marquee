@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.42.0] - 2026-03-09
+
+### feat
+- Fuzzy TMDB title matching in CSV import: strips leading articles ("The", "A", "An") before comparing titles so entries like "Brothers Bloom" correctly match "The Brothers Bloom"; typo handling relies on TMDB's own search ranking (top result used as fallback)
+
+---
+
+
 ## [0.41.0] - 2026-03-09
 
 ### fix
