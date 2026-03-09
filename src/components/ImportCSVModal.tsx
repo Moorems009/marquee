@@ -556,6 +556,44 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
   const reviewingCollections = rows.filter(r => r.status === 'reviewing')
   // Collections that had no TMDB match and need individual review
   const notFoundCollections = rows.filter(r => r.status === 'collection' && r.tmdbNotFound)
+  // True while the user is actively reviewing/editing collection films
+  const isReviewStep = isParsed && (reviewingCollections.length > 0 || notFoundCollections.length > 0) && !summary
+
+  const rowPreview = isParsed && rows.length > 0 && (
+    <div className="mb-4">
+      {rows.some(r => r.warning) && (
+        <p className="text-warm-gray text-[0.8rem] mb-2 italic">
+          {fallbackFormat
+            ? <>Rows using fallback will be imported as <strong className="text-navy">{fallbackFormat}</strong>.</>
+            : 'Rows using fallback will have no format set.'}
+        </p>
+      )}
+      <p className="text-warm-gray text-[0.8rem] mb-2">
+        {rows.length} movie{rows.length !== 1 ? 's' : ''} found
+        {rows.filter(r => r.status === 'duplicate').length > 0 && ` · ${rows.filter(r => r.status === 'duplicate').length} duplicate${rows.filter(r => r.status === 'duplicate').length !== 1 ? 's' : ''}`}
+        {hasUnresolvedCollections && ` · ${rows.filter(r => r.status === 'collection').length} collection${rows.filter(r => r.status === 'collection').length !== 1 ? 's' : ''}`}
+        {rows.filter(r => r.warning).length > 0 && ` · ${rows.filter(r => r.warning).length} format warning${rows.filter(r => r.warning).length !== 1 ? 's' : ''}`}
+      </p>
+      <div className="border border-powder-blue rounded overflow-hidden max-h-75 overflow-y-auto">
+        {rows.map((r, i) => (
+          <div
+            key={r.key}
+            className={`flex flex-col gap-1 px-3 py-2 border-b border-powder-blue text-[0.8rem] ${i % 2 === 0 ? 'bg-white' : 'bg-cream'}`}
+          >
+            <div className="flex items-center gap-3">
+              <span className={`font-bold w-3 text-center ${statusClass(r.status)}`}>{statusIcon(r.status)}</span>
+              <span className="text-navy flex-1">
+                {r.row.title}
+                {r.row.year && <span className="text-warm-gray ml-1">({r.row.year})</span>}
+              </span>
+              {r.message && <span className="text-warm-gray text-[0.75rem] italic">{r.message}</span>}
+            </div>
+            {r.warning && <div className="pl-6 text-warm-gray text-[0.72rem] italic">⚠ {r.warning}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 
   return (
     <div
@@ -564,7 +602,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-cream border border-powder-blue rounded p-8 w-full max-w-140 mx-4 max-h-[90vh] overflow-y-auto"
+        className={`bg-cream border border-powder-blue rounded p-8 w-full mx-4 max-h-[92vh] overflow-y-auto transition-[max-width] duration-300 ${isReviewStep ? 'max-w-5xl' : 'max-w-140'}`}
       >
         <h2 className="mt-0 mb-6 text-[1.1rem] text-dusty-rose uppercase tracking-widest">Import CSV</h2>
 
@@ -625,55 +663,62 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
           </div>
         )}
 
-        {/* Review panel — TMDB-matched collections awaiting film-level confirmation */}
-        {isParsed && reviewingCollections.length > 0 && !summary && (
-          <div className="bg-white border border-powder-blue rounded p-4 mb-4">
-            <div className="text-[0.8rem] font-bold text-navy mb-1">
-              Review {reviewingCollections.length} expanded collection{reviewingCollections.length !== 1 ? 's' : ''}
+        {/* Review step — two-column layout: review panels left, row list right */}
+        {isReviewStep && (
+          <div className="grid grid-cols-[1fr_280px] gap-6 mb-4">
+            <div className="flex flex-col gap-4 min-w-0">
+              {reviewingCollections.length > 0 && (
+                <div className="bg-white border border-powder-blue rounded p-4">
+                  <div className="text-[0.8rem] font-bold text-navy mb-1">
+                    Review {reviewingCollections.length} expanded collection{reviewingCollections.length !== 1 ? 's' : ''}
+                  </div>
+                  <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
+                    Remove any films you don&apos;t want imported. Collections with all films removed will be kept as a single entry.
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    {reviewingCollections.map(r => (
+                      <CollectionReviewCard
+                        key={r.key}
+                        row={r}
+                        parts={reviewParts[r.key] || []}
+                        onPartsChange={(parts) => setReviewParts(prev => ({ ...prev, [r.key]: parts }))}
+                        onKeepAsIs={() => handleKeepCollection(r.key)}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleConfirmAllReviews}
+                    className="mt-4 bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm font-bold"
+                  >
+                    Confirm all expansions
+                  </button>
+                </div>
+              )}
+              {notFoundCollections.length > 0 && (
+                <div className="bg-white border border-blush rounded p-4">
+                  <div className="text-[0.8rem] font-bold text-navy mb-1">
+                    {notFoundCollections.length} collection{notFoundCollections.length !== 1 ? 's' : ''} not found on TMDB
+                  </div>
+                  <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
+                    Search for films to add manually, or keep as a single entry.
+                    {useCollectionLabel && <span className="italic"> Collection title will be applied as a label.</span>}
+                  </p>
+                  <div className="flex flex-col gap-4">
+                    {notFoundCollections.map(r => (
+                      <CollectionNotFoundCard
+                        key={r.key}
+                        row={r}
+                        useCollectionLabel={useCollectionLabel}
+                        onKeepAsIs={() => handleKeepCollection(r.key)}
+                        onConfirm={(parts) => handleConfirmManual(r.key, parts)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
-              Remove any films you don&apos;t want imported. Collections with all films removed will be kept as a single entry.
-            </p>
-            <div className="flex flex-col gap-3">
-              {reviewingCollections.map(r => (
-                <CollectionReviewCard
-                  key={r.key}
-                  row={r}
-                  parts={reviewParts[r.key] || []}
-                  onPartsChange={(parts) => setReviewParts(prev => ({ ...prev, [r.key]: parts }))}
-                  onKeepAsIs={() => handleKeepCollection(r.key)}
-                />
-              ))}
-            </div>
-            <button
-              onClick={handleConfirmAllReviews}
-              className="mt-4 bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm font-bold"
-            >
-              Confirm all expansions
-            </button>
-          </div>
-        )}
-
-        {/* Individual review for collections with no TMDB match */}
-        {isParsed && notFoundCollections.length > 0 && !summary && (
-          <div className="bg-white border border-blush rounded p-4 mb-4">
-            <div className="text-[0.8rem] font-bold text-navy mb-1">
-              {notFoundCollections.length} collection{notFoundCollections.length !== 1 ? 's' : ''} not found on TMDB
-            </div>
-            <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
-              Search for films to add manually, or keep as a single entry.
-              {useCollectionLabel && <span className="italic"> Collection title will be applied as a label.</span>}
-            </p>
-            <div className="flex flex-col gap-4">
-              {notFoundCollections.map(r => (
-                <CollectionNotFoundCard
-                  key={r.key}
-                  row={r}
-                  useCollectionLabel={useCollectionLabel}
-                  onKeepAsIs={() => handleKeepCollection(r.key)}
-                  onConfirm={(parts) => handleConfirmManual(r.key, parts)}
-                />
-              ))}
+            <div className="flex flex-col gap-0 shrink-0">
+              {rowPreview}
             </div>
           </div>
         )}
@@ -699,42 +744,8 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
           </div>
         )}
 
-        {/* Row preview / progress */}
-        {isParsed && rows.length > 0 && (
-          <div className="mb-4">
-            {rows.some(r => r.warning) && (
-              <p className="text-warm-gray text-[0.8rem] mb-2 italic">
-                {fallbackFormat
-                  ? <>Rows using fallback will be imported as <strong className="text-navy">{fallbackFormat}</strong>.</>
-                  : 'Rows using fallback will have no format set.'}
-              </p>
-            )}
-            <p className="text-warm-gray text-[0.8rem] mb-2">
-              {rows.length} movie{rows.length !== 1 ? 's' : ''} found
-              {rows.filter(r => r.status === 'duplicate').length > 0 && ` · ${rows.filter(r => r.status === 'duplicate').length} duplicate${rows.filter(r => r.status === 'duplicate').length !== 1 ? 's' : ''}`}
-              {hasUnresolvedCollections && ` · ${rows.filter(r => r.status === 'collection').length} collection${rows.filter(r => r.status === 'collection').length !== 1 ? 's' : ''}`}
-              {rows.filter(r => r.warning).length > 0 && ` · ${rows.filter(r => r.warning).length} format warning${rows.filter(r => r.warning).length !== 1 ? 's' : ''}`}
-            </p>
-            <div className="border border-powder-blue rounded overflow-hidden max-h-75 overflow-y-auto">
-              {rows.map((r, i) => (
-                <div
-                  key={r.key}
-                  className={`flex flex-col gap-1 px-3 py-2 border-b border-powder-blue text-[0.8rem] ${i % 2 === 0 ? 'bg-white' : 'bg-cream'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`font-bold w-3 text-center ${statusClass(r.status)}`}>{statusIcon(r.status)}</span>
-                    <span className="text-navy flex-1">
-                      {r.row.title}
-                      {r.row.year && <span className="text-warm-gray ml-1">({r.row.year})</span>}
-                    </span>
-                    {r.message && <span className="text-warm-gray text-[0.75rem] italic">{r.message}</span>}
-                  </div>
-                  {r.warning && <div className="pl-6 text-warm-gray text-[0.72rem] italic">⚠ {r.warning}</div>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Row preview — shown inline when not in review step */}
+        {!isReviewStep && rowPreview}
 
         {/* Progress bar */}
         {progress && (
