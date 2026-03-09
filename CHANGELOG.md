@@ -12,6 +12,25 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.45.0] - 2026-03-09
+
+### feat
+- Collection resolution in CSV import is now a global panel: radio buttons for "Expand all" vs "Keep all", plus a "Use collection title as a label" checkbox, applied at once via a single Apply button
+- Collections with no TMDB match are surfaced individually after Apply with a per-row "Keep as single entry" option, so unmatched titles can be reviewed before importing
+- Import summary distinguishes standalone movies from collection films: separate lines for each
+
+---
+
+
+## [0.45.0] - 2026-03-09
+
+### feat
+- Collection resolution in CSV import is now global, not per-row: a single panel presents "Expand all into individual films" / "Keep all as single entries" radio options plus a "Use collection title as a label" checkbox, applied to all detected collections at once via a single Apply button
+- Import summary now separates standalone movies from collection films: shows "X standalone movies imported" and "Y films from Z expanded collections" as distinct lines
+
+---
+
+
 ## [0.44.0] - 2026-03-09
 
 ### feat
