@@ -31,7 +31,18 @@ export default function BarcodeScannerModal({ onScan, onClose }: Props) {
     async function startScanner() {
       try {
         const { BrowserMultiFormatReader } = await import('@zxing/browser')
-        const reader = new BrowserMultiFormatReader()
+        const { BarcodeFormat, DecodeHintType } = await import('@zxing/library')
+
+        // Restrict to UPC/EAN formats only — movie discs never use QR, Aztec, etc.
+        // Scanning fewer formats significantly improves detection speed on mobile.
+        const hints = new Map()
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+        ])
+        const reader = new BrowserMultiFormatReader(hints)
 
         // Use decodeFromConstraints so the browser prompts for camera permission
         // before we try to enumerate devices. facingMode: 'environment' selects

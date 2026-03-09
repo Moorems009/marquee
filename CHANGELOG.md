@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.53.3] - 2026-03-09
+
+### fix
+- Configure `BrowserMultiFormatReader` with `DecodeHintType.POSSIBLE_FORMATS` restricted to UPC-A, UPC-E, EAN-13, and EAN-8 — eliminates scanning overhead from QR, Aztec, PDF417, and other formats never found on physical media, significantly improving detection speed on mobile
+
+---
+
+
 ## [0.53.2] - 2026-03-09
 
 ### fix
