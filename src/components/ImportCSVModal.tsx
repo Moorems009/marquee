@@ -168,7 +168,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
       .from('movies')
       .insert([{
         title: row.title,
-        year: row.year ? parseInt(row.year) : null,
+        year: row.year ? parseInt(row.year) : tmdbYear,
         format,
         imprint: row.imprint || null,
         director: director || null,

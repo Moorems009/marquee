@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.41.0] - 2026-03-09
+
+### fix
+- CSV import now captures year from TMDB when the CSV has no Year column; year from TMDB release_date is used as fallback so movies are no longer imported without a year
+
+---
+
+
 ## [0.40.0] - 2026-03-09
 
 ### feat
