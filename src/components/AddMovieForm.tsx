@@ -195,8 +195,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
             <button type="button" onClick={() => switchItemType('movie')} className={toggleBtnClass(itemType === 'movie')}>Movie</button>
             <button type="button" onClick={() => switchItemType('tv_season')} className={toggleBtnClass(itemType === 'tv_season')}>TV Season</button>
           </div>
-          {itemType === 'movie' && (
-            <button
+          <button
               type="button"
               onClick={() => setShowScanner(true)}
               className="bg-transparent border border-powder-blue text-navy px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.8rem] flex items-center gap-1.5 hover:bg-powder-blue transition-colors"
@@ -209,7 +208,6 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
               </svg>
               Scan
             </button>
-          )}
         </div>
       </div>
 
