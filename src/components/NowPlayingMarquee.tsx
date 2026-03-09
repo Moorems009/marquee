@@ -6,6 +6,7 @@ type Props = {
   movies: Movie[]
   nowPlayingIds: string[]
   nightMode?: boolean
+  onClear?: () => void
 }
 
 const DAY = {
@@ -36,7 +37,7 @@ const NIGHT = {
   bulbGlow: 'rgba(255, 217, 122, 0.7)',
 }
 
-export default function NowPlayingMarquee({ movies, nowPlayingIds, nightMode }: Props) {
+export default function NowPlayingMarquee({ movies, nowPlayingIds, nightMode, onClear }: Props) {
   const c = nightMode ? NIGHT : DAY
 
   const slots = [0, 1, 2].map(i => {
@@ -162,6 +163,26 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds, nightMode }: 
         </div>
       </div>
 
+      {onClear && nowPlayingIds.length > 0 && (
+        <div style={{ textAlign: 'right', marginTop: '0.4rem' }}>
+          <button
+            onClick={onClear}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: c.emptySlot,
+              fontFamily: 'Georgia, serif',
+              fontSize: '0.65rem',
+              letterSpacing: '0.1em',
+              cursor: 'pointer',
+              padding: 0,
+              lineHeight: 1
+            }}
+          >
+            clear
+          </button>
+        </div>
+      )}
     </div>
   )
 }

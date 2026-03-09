@@ -12,6 +12,23 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.34.0] - 2026-03-08
+
+### feat
+- Clear Now Playing button — appears right-aligned below the sign when slots are occupied; clears all titles and persists to user metadata
+- Shuffle Now Playing stays in My Shelf section to preserve filter-awareness
+
+---
+
+
+## [0.33.0] - 2026-03-08
+
+### feat
+- "clear" button appears inline with the Now Playing header when slots are occupied; clears all Now Playing titles and persists to user metadata
+
+---
+
+
 ## [0.32.0] - 2026-03-08
 
 ### feat

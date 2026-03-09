@@ -60,11 +60,15 @@ export default function MovieLibrary() {
     await supabase.auth.updateUser({ data: { settings: { ...existing, hasSeenWelcome: true } } })
   }
 
-  async function handleShuffle(picked: string[]) {
+  async function persistNowPlaying(ids: string[]) {
     const { data: authData } = await supabase.auth.getUser()
     const existing = authData.user?.user_metadata?.settings || {}
-    await supabase.auth.updateUser({ data: { settings: { ...existing, nowPlaying: picked } } })
-    setNowPlayingIds(picked)
+    await supabase.auth.updateUser({ data: { settings: { ...existing, nowPlaying: ids } } })
+    setNowPlayingIds(ids)
+  }
+
+  async function handleShuffle(picked: string[]) {
+    await persistNowPlaying(picked)
   }
 
   async function handleToggleNowPlaying(movieId: string) {
@@ -201,7 +205,7 @@ export default function MovieLibrary() {
         </div>
       )}
 
-      <NowPlayingMarquee movies={movies} nowPlayingIds={nowPlayingIds} nightMode={nightMode} />
+      <NowPlayingMarquee movies={movies} nowPlayingIds={nowPlayingIds} nightMode={nightMode} onClear={() => persistNowPlaying([])} />
 
       <ErrorBoundary>
         <MovieList
