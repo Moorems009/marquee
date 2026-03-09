@@ -60,10 +60,7 @@ export default function MovieLibrary() {
     await supabase.auth.updateUser({ data: { settings: { ...existing, hasSeenWelcome: true } } })
   }
 
-  async function handleShuffle() {
-    if (movies.length === 0) return
-    const shuffled = [...movies].sort(() => Math.random() - 0.5)
-    const picked = shuffled.slice(0, Math.min(3, movies.length)).map(m => m.id)
+  async function handleShuffle(picked: string[]) {
     const { data: authData } = await supabase.auth.getUser()
     const existing = authData.user?.user_metadata?.settings || {}
     await supabase.auth.updateUser({ data: { settings: { ...existing, nowPlaying: picked } } })

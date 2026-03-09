@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.32.0] - 2026-03-08
+
+### feat
+- Shuffle Now Playing respects active filters — draws from the filtered movie pool (by title search, format, label, or any combination); falls back to full shelf only when no filters are active
+
+---
+
+
 ## [0.31.0] - 2026-03-08
 
 ### feat

@@ -16,7 +16,7 @@ type Props = {
   movieLabels: Record<string, Label[]>
   onEdit: (movie: Movie) => void
   onViewModeChange: (mode: 'list' | 'grid') => void
-  onShuffle: () => void
+  onShuffle: (ids: string[]) => void
   onMovieAdded: () => void
 }
 
@@ -108,7 +108,12 @@ export default function MovieList({
         </button>
         {!loading && movies.length > 0 && (
           <button
-            onClick={onShuffle}
+            onClick={() => {
+              const pool = filteredMovies.length > 0 ? filteredMovies : movies
+              const shuffled = [...pool].sort(() => Math.random() - 0.5)
+              const picked = shuffled.slice(0, Math.min(3, shuffled.length)).map(m => m.id)
+              onShuffle(picked)
+            }}
             className="bg-transparent border border-powder-blue text-warm-gray px-3 py-1.5 cursor-pointer font-serif text-sm rounded-sm"
           >
             ↺ Shuffle Now Playing
