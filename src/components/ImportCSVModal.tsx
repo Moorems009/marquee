@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl, searchCollection, getCollectionParts } from '@/lib/tmdb'
+import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl, searchCollection, getCollectionParts, searchTVShows, getTVDetails, getTVSeasonDetails } from '@/lib/tmdb'
 import { Movie } from '@/lib/types'
 import { inputStyle } from '@/lib/styles'
 import CollectionReviewCard from './CollectionReviewCard'
@@ -15,6 +15,8 @@ type CSVRow = {
   format?: string
   imprint?: string
   labels?: string
+  type?: string    // 'movie' | 'tv_season' — defaults to 'movie'
+  season?: string  // season number for tv_season rows
 }
 
 export type CollectionPart = {
@@ -113,7 +115,9 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         year: row['year'] || '',
         format: row['format'] || '',
         imprint: row['imprint'] || '',
-        labels: row['labels'] || ''
+        labels: row['labels'] || '',
+        type: row['type'] || '',
+        season: row['season'] || '',
       }
     }).filter((r) => r.title.length > 0)
   }
@@ -139,7 +143,8 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
           : !normalizeFormat(row.format)
           ? `Unknown format "${row.format}" — will use fallback`
           : undefined
-        const isCollection = !isDuplicate && isCollectionRow(row.title)
+        const isTVSeason = row.type?.toLowerCase().replace(/[\s_-]/g, '') === 'tvseason'
+        const isCollection = !isDuplicate && !isTVSeason && isCollectionRow(row.title)
         return {
           key,
           row,
@@ -350,47 +355,77 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
 
   async function importRow(row: ImportRow, userId: string): Promise<string | 'error'> {
     const { row: r } = row
-    let director = r.director || ''
+    const isTVSeason = r.type?.toLowerCase().replace(/[\s_-]/g, '') === 'tvseason'
+    let creator = r.director || ''
     let posterUrl = null
     let mpaaRating: string | null = null
     let genre: string | null = null
     let tmdbYear: number | null = null
+    let seasonNumber: number | null = r.season ? parseInt(r.season) : null
     const normalizedFormat = r.format ? normalizeFormat(r.format) : null
     const format = normalizedFormat || fallbackFormat
 
     try {
-      const results = await searchMovies(r.title)
-      const match = findBestMatch(results, r.title, r.year)
-      if (match) {
-        if (match.poster_path) posterUrl = getPosterUrl(match.poster_path)
-        if (match.release_date) tmdbYear = parseInt(match.release_date.split('-')[0])
-        const [credits, ratingData, genreData] = await Promise.all([
-          !director ? getMovieCredits(match.id) : Promise.resolve({ director: '' }),
-          getMovieRating(match.id),
-          getMovieGenre(match.id)
-        ])
-        if (!director) director = credits.director || ''
-        mpaaRating = ratingData.mpaa_rating || null
-        genre = genreData.genre || null
+      if (isTVSeason) {
+        // Search TV shows
+        const results = await searchTVShows(r.title)
+        if (results.length > 0) {
+          const show = results[0]
+          const details = await getTVDetails(show.id)
+          if (!creator) creator = details.creator || ''
+          genre = details.genre || null
+          posterUrl = details.poster_path ? getPosterUrl(details.poster_path) : null
+          // If season number provided, get season-specific poster + air year + rating
+          if (seasonNumber) {
+            const seasonDetails = await getTVSeasonDetails(show.id, seasonNumber)
+            if (seasonDetails.air_date) tmdbYear = parseInt(seasonDetails.air_date.split('-')[0])
+            if (seasonDetails.poster_path) posterUrl = getPosterUrl(seasonDetails.poster_path)
+            if (seasonDetails.tv_rating) mpaaRating = seasonDetails.tv_rating
+          } else if (show.first_air_date) {
+            tmdbYear = parseInt(show.first_air_date.split('-')[0])
+          }
+        }
+      } else {
+        // Search movies
+        const results = await searchMovies(r.title)
+        const match = findBestMatch(results, r.title, r.year)
+        if (match) {
+          if (match.poster_path) posterUrl = getPosterUrl(match.poster_path)
+          if (match.release_date) tmdbYear = parseInt(match.release_date.split('-')[0])
+          const [credits, ratingData, genreData] = await Promise.all([
+            !creator ? getMovieCredits(match.id) : Promise.resolve({ director: '' }),
+            getMovieRating(match.id),
+            getMovieGenre(match.id)
+          ])
+          if (!creator) creator = credits.director || ''
+          mpaaRating = ratingData.mpaa_rating || null
+          genre = genreData.genre || null
+        }
       }
     } catch {
       // TMDB failed, continue with what we have
     }
 
+    const record: Record<string, unknown> = {
+      title: r.title,
+      year: r.year ? parseInt(r.year) : tmdbYear,
+      format,
+      imprint: r.imprint || null,
+      creator: creator || null,
+      poster_url: posterUrl,
+      mpaa_rating: mpaaRating,
+      genre,
+      user_id: userId,
+      item_type: isTVSeason ? 'tv_season' : 'movie',
+    }
+    if (isTVSeason) {
+      record.show_title = r.title
+      record.season_number = seasonNumber
+    }
+
     const { data: movieData, error: movieError } = await supabase
       .from('media_items')
-      .insert([{
-        title: r.title,
-        year: r.year ? parseInt(r.year) : tmdbYear,
-        format,
-        imprint: r.imprint || null,
-        creator: director || null,
-        poster_url: posterUrl,
-        mpaa_rating: mpaaRating,
-        genre,
-        user_id: userId,
-        item_type: 'movie'
-      }])
+      .insert([record])
       .select()
       .single()
 

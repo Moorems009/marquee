@@ -57,6 +57,48 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ genre })
   }
 
+  // --- TV actions ---
+
+  if (action === 'search_tv') {
+    const query = searchParams.get('query') ?? ''
+    const res = await fetch(
+      `${TMDB_BASE}/search/tv?query=${encodeURIComponent(query)}&language=en-US&page=1`,
+      { headers }
+    )
+    const data = await res.json()
+    return NextResponse.json(data.results?.slice(0, 6) ?? [])
+  }
+
+  if (action === 'tv_details') {
+    const id = searchParams.get('id') ?? ''
+    const res = await fetch(`${TMDB_BASE}/tv/${id}?language=en-US`, { headers })
+    const data = await res.json()
+    const creator = data.created_by?.[0]?.name ?? null
+    const genre = data.genres?.map((g: { name: string }) => g.name).join(', ') || null
+    const poster_path = data.poster_path ?? null
+    return NextResponse.json({ creator, genre, poster_path })
+  }
+
+  // Fetches season poster + air date + TV content rating in one round trip
+  if (action === 'tv_season') {
+    const id = searchParams.get('id') ?? ''
+    const season = searchParams.get('season') ?? ''
+    const [seasonRes, ratingRes] = await Promise.all([
+      fetch(`${TMDB_BASE}/tv/${id}/season/${season}?language=en-US`, { headers }),
+      fetch(`${TMDB_BASE}/tv/${id}/content_ratings`, { headers }),
+    ])
+    const seasonData = seasonRes.ok ? await seasonRes.json() : {}
+    const ratingData = ratingRes.ok ? await ratingRes.json() : {}
+    const usRating = ratingData.results?.find((r: { iso_3166_1: string }) => r.iso_3166_1 === 'US')?.rating ?? null
+    return NextResponse.json({
+      air_date: seasonData.air_date ?? null,
+      poster_path: seasonData.poster_path ?? null,
+      tv_rating: usRating,
+    })
+  }
+
+  // --- Collection actions ---
+
   if (action === 'search_collection') {
     const query = searchParams.get('query') ?? ''
     const res = await fetch(

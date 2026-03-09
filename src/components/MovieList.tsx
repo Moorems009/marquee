@@ -311,6 +311,9 @@ export default function MovieList({
                 )}
                 <div className="min-w-0">
                   <span className="font-bold text-navy">{movie.title}</span>
+                  {movie.item_type === 'tv_season' && movie.season_number != null && (
+                    <span className="text-warm-gray ml-1.5 text-sm">S{movie.season_number}</span>
+                  )}
                   <span className="text-warm-gray ml-2 text-sm">({movie.year})</span>
                   {movie.creator && (
                     <span className="text-warm-gray ml-2 text-sm">— {movie.creator}</span>

@@ -12,6 +12,20 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.56.0] - 2026-03-09
+
+### feat (TV season support)
+- TMDB proxy: added `search_tv`, `tv_details`, `tv_season` actions (searches `/search/tv`, fetches show creator/genre/poster, fetches season air date + poster + content rating in one trip)
+- `tmdb.ts`: added `searchTVShows`, `getTVDetails`, `getTVSeasonDetails` client functions
+- `types.ts`: added `TVShowResult` type
+- `AddMovieForm`: Movie / TV Season toggle; TV mode searches shows via TMDB, season number field auto-fills poster, air year, content rating; inserts with `item_type: 'tv_season'`, `show_title`, `season_number`
+- `MovieList`: TV season rows display `S{n}` season indicator inline with title
+- `EditMovieModal`: shows Season field for `tv_season` items; heading adapts to item type
+- `ImportCSVModal`: supports `type` column (`tv_season`) and `season` column; TV rows use TV TMDB search path and skip collection detection; inserts with correct `item_type`/`season_number`
+
+---
+
+
 ## [0.55.0] - 2026-03-09
 
 ### feat (schema migration — Option C)

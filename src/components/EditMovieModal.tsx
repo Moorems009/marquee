@@ -104,7 +104,9 @@ export default function EditMovieModal({
         onClick={(e) => e.stopPropagation()}
         className="bg-cream border border-powder-blue rounded p-8 w-full max-w-125 mx-4 max-h-[90vh] overflow-y-auto"
       >
-        <h2 className="mt-0 mb-6 text-[1.1rem] text-dusty-rose uppercase tracking-widest">Edit Movie</h2>
+        <h2 className="mt-0 mb-6 text-[1.1rem] text-dusty-rose uppercase tracking-widest">
+          {movie.item_type === 'tv_season' ? 'Edit TV Season' : 'Edit Movie'}
+        </h2>
 
         <div className="flex gap-4">
           {editData.poster_url && (
@@ -164,6 +166,18 @@ export default function EditMovieModal({
                 className={inputStyle}
               />
             </div>
+            {movie.item_type === 'tv_season' && (
+              <div>
+                <label className={fieldLabelStyle}>Season</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={editData.season_number ?? ''}
+                  onChange={(e) => setEditData({ ...editData, season_number: e.target.value ? parseInt(e.target.value) : null })}
+                  className={inputStyle}
+                />
+              </div>
+            )}
             <div>
               <label className={fieldLabelStyle}>Year</label>
               <input

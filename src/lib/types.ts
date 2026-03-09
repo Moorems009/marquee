@@ -27,3 +27,10 @@ export type TMDBResult = {
   release_date: string
   poster_path: string | null
 }
+
+export type TVShowResult = {
+  id: number
+  name: string
+  first_air_date: string
+  poster_path: string | null
+}
