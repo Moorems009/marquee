@@ -12,6 +12,15 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.50.0] - 2026-03-09
+
+### feat
+- Collection review panel now supports searching for a different TMDB collection per entry: "Replace with a different TMDB collection…" input searches TMDB collections by name, shows poster thumbnails, and selecting one replaces the entire film list wholesale
+- Added "Clear all" button (dusty-rose) in review panel to wipe a collection's film list in one click
+
+---
+
+
 ## [0.48.0] - 2026-03-09
 
 ### feat

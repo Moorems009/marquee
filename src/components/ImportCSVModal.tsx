@@ -42,6 +42,13 @@ type ManualEntry = {
   parts: CollectionPart[]
 }
 
+type CollectionSearchEntry = {
+  search: string
+  results: Array<{ id: number; name: string; poster_path: string | null }>
+  searching: boolean
+  loadingId: number | null
+}
+
 type SummaryData = {
   importedStandalone: number
   importedFromCollections: number
@@ -74,6 +81,8 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
   const [manualEntries, setManualEntries] = useState<Record<string, ManualEntry>>({})
   const manualSearchTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const [reviewParts, setReviewParts] = useState<Record<string, CollectionPart[]>>({})
+  const [collectionSearches, setCollectionSearches] = useState<Record<string, CollectionSearchEntry>>({})
+  const collectionSearchTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   function normalizeFormat(raw: string): string | null {
     const val = raw.trim().toLowerCase().replace(/[\s\-_.]/g, '')
@@ -315,6 +324,42 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
       updatedRows.splice(i, 1, ...newRows)
     }
     setRows(updatedRows)
+  }
+
+  function handleCollectionSearch(key: string, value: string) {
+    setCollectionSearches(prev => ({
+      ...prev,
+      [key]: { ...(prev[key] ?? { results: [], searching: false, loadingId: null }), search: value }
+    }))
+    if (collectionSearchTimeouts.current[key]) clearTimeout(collectionSearchTimeouts.current[key])
+    if (value.length < 2) {
+      setCollectionSearches(prev => ({ ...prev, [key]: { ...prev[key], results: [] } }))
+      return
+    }
+    collectionSearchTimeouts.current[key] = setTimeout(async () => {
+      setCollectionSearches(prev => ({ ...prev, [key]: { ...prev[key], searching: true } }))
+      const results = await searchCollection(value)
+      setCollectionSearches(prev => ({ ...prev, [key]: { ...prev[key], searching: false, results: results.slice(0, 5) } }))
+    }, 300)
+  }
+
+  async function handleReplaceWithCollection(key: string, collectionId: number) {
+    setCollectionSearches(prev => ({ ...prev, [key]: { ...prev[key], results: [], search: '', loadingId: collectionId } }))
+    const parts = await getCollectionParts(collectionId)
+    setReviewParts(prev => ({ ...prev, [key]: parts }))
+    setCollectionSearches(prev => ({ ...prev, [key]: { ...prev[key], loadingId: null } }))
+  }
+
+  function handleAddToReview(key: string, result: { id: number; title: string; release_date: string; poster_path?: string }) {
+    setReviewParts(prev => {
+      const current = prev[key] || []
+      if (current.some(p => p.id === result.id)) return prev
+      return { ...prev, [key]: [...current, result] }
+    })
+    setManualEntries(prev => ({
+      ...prev,
+      [key]: { ...(prev[key] ?? { search: '', results: [], searching: false, parts: [] }), search: '', results: [] }
+    }))
   }
 
   function handleKeepAsIs(key: string) {
@@ -685,18 +730,29 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
             <div className="flex flex-col gap-3">
               {reviewingCollections.map(r => {
                 const parts = reviewParts[r.key] || []
+                const entry = manualEntries[r.key] ?? { search: '', results: [], searching: false, parts: [] }
                 return (
                   <div key={r.key} className="border-b border-powder-blue last:border-b-0 pb-3 last:pb-0">
                     <div className="flex items-center justify-between gap-3 mb-1.5">
                       <span className="text-navy text-[0.8rem] font-bold">{r.row.title}</span>
-                      <button
-                        onClick={() => handleKeepReviewAsIs(r.key)}
-                        className="bg-white text-warm-gray border border-warm-gray px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem] shrink-0"
-                      >
-                        Keep as single entry
-                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {parts.length > 0 && (
+                          <button
+                            onClick={() => setReviewParts(prev => ({ ...prev, [r.key]: [] }))}
+                            className="bg-white text-dusty-rose border border-dusty-rose px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem]"
+                          >
+                            Clear all
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleKeepReviewAsIs(r.key)}
+                          className="bg-white text-warm-gray border border-warm-gray px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem]"
+                        >
+                          Keep as single entry
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-0.5">
+                    <div className="flex flex-col gap-0.5 mb-1.5">
                       {parts.map((part, idx) => (
                         <div key={idx} className="flex items-center gap-2 py-0.5">
                           {part.poster_path && (
@@ -716,6 +772,83 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
                       ))}
                       {parts.length === 0 && (
                         <p className="text-warm-gray text-[0.72rem] italic m-0">All films removed — will be kept as a single entry</p>
+                      )}
+                    </div>
+                    {/* Replace with a different TMDB collection */}
+                    {(() => {
+                      const cs = collectionSearches[r.key] ?? { search: '', results: [], searching: false, loadingId: null }
+                      return (
+                        <div className="relative mb-1.5">
+                          <input
+                            type="text"
+                            placeholder="Replace with a different TMDB collection…"
+                            value={cs.search}
+                            onChange={(e) => handleCollectionSearch(r.key, e.target.value)}
+                            onBlur={() => setTimeout(() => setCollectionSearches(prev => ({
+                              ...prev,
+                              [r.key]: { ...(prev[r.key] ?? { search: '', searching: false, loadingId: null }), results: [] }
+                            })), 150)}
+                            className="w-full border border-powder-blue rounded-sm px-3 py-1.5 font-serif text-[0.8rem] text-navy bg-white outline-none"
+                          />
+                          {(cs.searching || cs.loadingId !== null) && (
+                            <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b px-3 py-2 text-[0.75rem] text-warm-gray italic">
+                              {cs.loadingId !== null ? 'Loading collection…' : 'Searching…'}
+                            </div>
+                          )}
+                          {!cs.searching && cs.loadingId === null && cs.results.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-10 shadow-md">
+                              {cs.results.map(result => (
+                                <div
+                                  key={result.id}
+                                  onMouseDown={() => handleReplaceWithCollection(r.key, result.id)}
+                                  className="flex items-center gap-2 px-3 py-2 cursor-pointer text-[0.8rem] text-navy hover:bg-cream border-b border-powder-blue last:border-b-0"
+                                >
+                                  {result.poster_path && (
+                                    <img src={getPosterUrl(result.poster_path, 'w92')} alt={result.name} className="w-6 h-9 object-cover rounded-sm shrink-0" />
+                                  )}
+                                  <span className="flex-1">{result.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
+
+                    {/* Add individual films */}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Add an individual film…"
+                        value={entry.search}
+                        onChange={(e) => handleManualSearch(r.key, e.target.value)}
+                        onBlur={() => setTimeout(() => setManualEntries(prev => ({
+                          ...prev,
+                          [r.key]: { ...(prev[r.key] ?? { search: '', searching: false, parts: [] }), results: [] }
+                        })), 150)}
+                        className="w-full border border-powder-blue rounded-sm px-3 py-1.5 font-serif text-[0.8rem] text-navy bg-white outline-none"
+                      />
+                      {entry.searching && (
+                        <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b px-3 py-2 text-[0.75rem] text-warm-gray italic">
+                          Searching…
+                        </div>
+                      )}
+                      {!entry.searching && entry.results.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 bg-white border border-powder-blue border-t-0 rounded-b z-10 shadow-md">
+                          {entry.results.map(result => (
+                            <div
+                              key={result.id}
+                              onMouseDown={() => handleAddToReview(r.key, result)}
+                              className="flex items-center gap-2 px-3 py-2 cursor-pointer text-[0.8rem] text-navy hover:bg-cream border-b border-powder-blue last:border-b-0"
+                            >
+                              {result.poster_path && (
+                                <img src={getPosterUrl(result.poster_path, 'w92')} alt={result.title} className="w-6 h-9 object-cover rounded-sm shrink-0" />
+                              )}
+                              <span className="flex-1">{result.title}</span>
+                              {result.release_date && <span className="text-warm-gray">({result.release_date.split('-')[0]})</span>}
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
