@@ -12,6 +12,15 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.53.4] - 2026-03-09
+
+### fix
+- Add `TRY_HARDER` decode hint for more aggressive per-frame sampling
+- Request 1080p camera resolution via constraints so ZXing has more pixels per barcode bar to work with; browser falls back gracefully if the camera doesn't support it
+
+---
+
+
 ## [0.53.3] - 2026-03-09
 
 ### fix

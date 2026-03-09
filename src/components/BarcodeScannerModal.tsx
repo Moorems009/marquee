@@ -42,13 +42,16 @@ export default function BarcodeScannerModal({ onScan, onClose }: Props) {
           BarcodeFormat.EAN_13,
           BarcodeFormat.EAN_8,
         ])
+        // Sample more aggressively per frame — trades a little CPU for faster detection
+        hints.set(DecodeHintType.TRY_HARDER, true)
         const reader = new BrowserMultiFormatReader(hints)
 
         // Use decodeFromConstraints so the browser prompts for camera permission
         // before we try to enumerate devices. facingMode: 'environment' selects
         // the rear camera on mobile without needing a device list.
+        // Higher resolution gives ZXing more pixels per barcode bar to work with.
         const controls = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: 'environment' } } },
+          { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
           videoRef.current!,
           async (result, err) => { // eslint-disable-line @typescript-eslint/no-unused-vars
             if (stopped || scannedRef.current) return
