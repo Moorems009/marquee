@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.48.0] - 2026-03-09
+
+### feat
+- After clicking "Expand all" in CSV import, TMDB-matched collections now enter a review step before being committed: each collection shows its TMDB films (small poster, title, year) with individual ✕ remove buttons; a single "Confirm all expansions" button finalizes; collections with all films removed are kept as a single entry; slash-separated rows still expand immediately
+
+---
+
+
 ## [0.47.0] - 2026-03-09
 
 ### feat

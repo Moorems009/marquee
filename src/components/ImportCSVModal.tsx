@@ -22,7 +22,7 @@ type CollectionPart = {
   poster_path?: string
 }
 
-type ImportStatus = 'pending' | 'duplicate' | 'importing' | 'done' | 'error' | 'collection'
+type ImportStatus = 'pending' | 'duplicate' | 'importing' | 'done' | 'error' | 'collection' | 'reviewing'
 
 type ImportRow = {
   key: string
@@ -73,6 +73,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
   const collectionsExpandedRef = useRef(0)
   const [manualEntries, setManualEntries] = useState<Record<string, ManualEntry>>({})
   const manualSearchTimeouts = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const [reviewParts, setReviewParts] = useState<Record<string, CollectionPart[]>>({})
 
   function normalizeFormat(raw: string): string | null {
     const val = raw.trim().toLowerCase().replace(/[\s\-_.]/g, '')
@@ -205,8 +206,9 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
   }
 
   // Apply the global collection resolution choice.
-  // Collections that can't be matched on TMDB remain as 'collection' with tmdbNotFound: true
-  // so the user can review and keep them individually.
+  // Slash-separated rows expand immediately; TMDB-matched collections go to 'reviewing'
+  // so the user can remove individual films before confirming. Unmatched collections
+  // get tmdbNotFound: true for per-row manual search.
   async function handleApplyCollections() {
     setFetchingCollections(true)
 
@@ -224,7 +226,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
       )
     }
 
-    let expandedCount = 0
+    const newReviewParts: Record<string, CollectionPart[]> = {}
     const updatedRows: ImportRow[] = []
 
     for (const row of rows) {
@@ -238,39 +240,81 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         continue
       }
 
-      // Expand path
-      const isSlash = row.row.title.includes(' / ')
-      const parts: CollectionPart[] = isSlash
-        ? row.row.title.split(' / ').map((t, i) => ({ id: i, title: t.trim(), release_date: '' }))
-        : (tmdbPartsMap[row.key] || [])
+      // Slash-separated: expand immediately — user already defined the titles
+      if (row.row.title.includes(' / ')) {
+        const parts = row.row.title.split(' / ').map((t, i) => ({ id: i, title: t.trim(), release_date: '' }))
+        collectionsExpandedRef.current++
+        const labelName = useCollectionLabel ? row.collectionLabel : undefined
+        for (const part of parts) {
+          const labels = labelName
+            ? [row.row.labels, labelName].filter(Boolean).join(';')
+            : row.row.labels
+          updatedRows.push({
+            key: String(rowKeyCounter.current++),
+            row: { ...row.row, title: part.title, year: row.row.year, labels },
+            status: 'pending',
+            warning: row.warning,
+            collectionLabel: row.collectionLabel,
+            fromCollection: true
+          })
+        }
+        continue
+      }
 
+      const parts = tmdbPartsMap[row.key] || []
       if (parts.length === 0) {
-        // No TMDB match — leave as 'collection' with tmdbNotFound so user can review individually
+        // No TMDB match — leave for individual manual review
         updatedRows.push({ ...row, status: 'collection', tmdbNotFound: true })
         continue
       }
 
-      expandedCount++
+      // TMDB match — stage for review before confirming
+      newReviewParts[row.key] = parts
+      updatedRows.push({ ...row, status: 'reviewing' as ImportStatus })
+    }
+
+    setReviewParts(newReviewParts)
+    setRows(updatedRows)
+    setFetchingCollections(false)
+  }
+
+  function handleRemoveReviewPart(key: string, idx: number) {
+    setReviewParts(prev => ({ ...prev, [key]: prev[key].filter((_, i) => i !== idx) }))
+  }
+
+  function handleKeepReviewAsIs(key: string) {
+    setRows(prev => prev.map(r => r.key === key ? { ...r, status: 'pending' as ImportStatus } : r))
+  }
+
+  function handleConfirmAllReviews() {
+    const updatedRows = [...rows]
+    for (let i = updatedRows.length - 1; i >= 0; i--) {
+      const row = updatedRows[i]
+      if (row.status !== 'reviewing') continue
+      const parts = reviewParts[row.key] || []
+      if (parts.length === 0) {
+        updatedRows[i] = { ...row, status: 'pending' }
+        continue
+      }
+      collectionsExpandedRef.current++
       const labelName = useCollectionLabel ? row.collectionLabel : undefined
-      for (const part of parts) {
+      const newRows: ImportRow[] = parts.map(part => {
         const partYear = part.release_date ? part.release_date.split('-')[0] : row.row.year
         const labels = labelName
           ? [row.row.labels, labelName].filter(Boolean).join(';')
           : row.row.labels
-        updatedRows.push({
+        return {
           key: String(rowKeyCounter.current++),
           row: { ...row.row, title: part.title, year: partYear, labels },
-          status: 'pending',
+          status: 'pending' as ImportStatus,
           warning: row.warning,
           collectionLabel: row.collectionLabel,
           fromCollection: true
-        })
-      }
+        }
+      })
+      updatedRows.splice(i, 1, ...newRows)
     }
-
-    collectionsExpandedRef.current = expandedCount
     setRows(updatedRows)
-    setFetchingCollections(false)
   }
 
   function handleKeepAsIs(key: string) {
@@ -553,9 +597,11 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     return 'text-warm-gray'
   }
 
-  const hasUnresolvedCollections = rows.some(r => r.status === 'collection')
+  const hasUnresolvedCollections = rows.some(r => r.status === 'collection' || r.status === 'reviewing')
   // Collections still awaiting global Apply (not yet attempted)
   const pendingCollectionCount = rows.filter(r => r.status === 'collection' && !r.tmdbNotFound).length
+  // Collections found on TMDB — staged for film-level review
+  const reviewingCollections = rows.filter(r => r.status === 'reviewing')
   // Collections that had no TMDB match and need individual review
   const notFoundCollections = rows.filter(r => r.status === 'collection' && r.tmdbNotFound)
 
@@ -623,6 +669,64 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
               className={`border-none px-4 py-1.5 font-serif text-sm rounded-sm ${fetchingCollections ? 'bg-warm-gray text-white cursor-default' : 'bg-powder-blue text-navy cursor-pointer'}`}
             >
               {fetchingCollections ? 'Fetching collection data…' : `Apply to all ${pendingCollectionCount} collection${pendingCollectionCount !== 1 ? 's' : ''}`}
+            </button>
+          </div>
+        )}
+
+        {/* Review panel — TMDB-matched collections awaiting film-level confirmation */}
+        {isParsed && reviewingCollections.length > 0 && !summary && (
+          <div className="bg-white border border-powder-blue rounded p-4 mb-4">
+            <div className="text-[0.8rem] font-bold text-navy mb-1">
+              Review {reviewingCollections.length} expanded collection{reviewingCollections.length !== 1 ? 's' : ''}
+            </div>
+            <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
+              Remove any films you don&apos;t want imported. Collections with all films removed will be kept as a single entry.
+            </p>
+            <div className="flex flex-col gap-3">
+              {reviewingCollections.map(r => {
+                const parts = reviewParts[r.key] || []
+                return (
+                  <div key={r.key} className="border-b border-powder-blue last:border-b-0 pb-3 last:pb-0">
+                    <div className="flex items-center justify-between gap-3 mb-1.5">
+                      <span className="text-navy text-[0.8rem] font-bold">{r.row.title}</span>
+                      <button
+                        onClick={() => handleKeepReviewAsIs(r.key)}
+                        className="bg-white text-warm-gray border border-warm-gray px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem] shrink-0"
+                      >
+                        Keep as single entry
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      {parts.map((part, idx) => (
+                        <div key={idx} className="flex items-center gap-2 py-0.5">
+                          {part.poster_path && (
+                            <img src={getPosterUrl(part.poster_path, 'w92')} alt={part.title} className="w-5 h-7 object-cover rounded-sm shrink-0" />
+                          )}
+                          <span className="text-navy text-[0.75rem] flex-1">
+                            {part.title}
+                            {part.release_date && <span className="text-warm-gray ml-1">({part.release_date.split('-')[0]})</span>}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveReviewPart(r.key, idx)}
+                            className="text-warm-gray hover:text-dusty-rose bg-transparent border-none cursor-pointer font-serif text-[0.75rem] shrink-0"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                      {parts.length === 0 && (
+                        <p className="text-warm-gray text-[0.72rem] italic m-0">All films removed — will be kept as a single entry</p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <button
+              onClick={handleConfirmAllReviews}
+              className="mt-4 bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm font-bold"
+            >
+              Confirm all expansions
             </button>
           </div>
         )}
