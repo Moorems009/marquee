@@ -12,6 +12,15 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.58.0] - 2026-03-09
+
+### feat
+- `AddMovieForm`: renamed "TV Season" toggle label to "TV"
+- `MovieList`: added Movie / TV / Both type filter to the filter bar; counts toward active filter badge; cleared by "Clear filters"
+
+---
+
+
 ## [0.57.0] - 2026-03-09
 
 ### feat (TV season improvements)

@@ -193,7 +193,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
         <div className="flex items-center gap-2">
           <div className="flex rounded-sm overflow-hidden border border-powder-blue">
             <button type="button" onClick={() => switchItemType('movie')} className={toggleBtnClass(itemType === 'movie')}>Movie</button>
-            <button type="button" onClick={() => switchItemType('tv_season')} className={toggleBtnClass(itemType === 'tv_season')}>TV Season</button>
+            <button type="button" onClick={() => switchItemType('tv_season')} className={toggleBtnClass(itemType === 'tv_season')}>TV</button>
           </div>
           <button
               type="button"

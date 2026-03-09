@@ -33,6 +33,7 @@ export default function MovieList({
 }: Props) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [search, setSearch] = useState('')
+  const [filterType, setFilterType] = useState('')
   const [filterFormat, setFilterFormat] = useState('')
   const [filterLabel, setFilterLabel] = useState('')
   const [filterGenre, setFilterGenre] = useState('')
@@ -44,7 +45,7 @@ export default function MovieList({
   const RATING_ORDER = ['G', 'PG', 'PG-13', 'R', 'NC-17']
   const [showFilters, setShowFilters] = useState(false)
 
-  const activeFilterCount = [search.trim(), filterFormat, filterLabel, filterGenre, filterRating].filter(Boolean).length + (!includeNR ? 1 : 0)
+  const activeFilterCount = [search.trim(), filterType, filterFormat, filterLabel, filterGenre, filterRating].filter(Boolean).length + (!includeNR ? 1 : 0)
 
   const allGenres = [...new Set(
     movies.flatMap(m => m.genre ? m.genre.split(',').map(g => g.trim()) : [])
@@ -55,6 +56,8 @@ export default function MovieList({
       const q = search.toLowerCase()
       if (!movie.title.toLowerCase().includes(q) && !(movie.creator?.toLowerCase().includes(q))) return false
     }
+    if (filterType === 'movie' && movie.item_type !== 'movie') return false
+    if (filterType === 'tv' && movie.item_type !== 'tv_season') return false
     if (filterFormat && movie.format !== filterFormat) return false
     if (filterLabel) {
       const ids = (movieLabels[String(movie.id)] || []).map((l) => String(l.id))
@@ -174,6 +177,11 @@ export default function MovieList({
               onChange={(e) => setSearch(e.target.value)}
               className={`${inputStyle} flex-1 min-w-0`}
             />
+            <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className={selectClass}>
+              <option value="">Movie &amp; TV</option>
+              <option value="movie">Movie</option>
+              <option value="tv">TV</option>
+            </select>
             <select value={filterFormat} onChange={(e) => setFilterFormat(e.target.value)} className={selectClass}>
               <option value="">All formats</option>
               <option>4K</option>
@@ -242,7 +250,7 @@ export default function MovieList({
             </div>
             {activeFilterCount > 0 && (
               <button
-                onClick={() => { setSearch(''); setFilterFormat(''); setFilterLabel(''); setFilterGenre(''); setFilterRating(''); setRatingMode('exact'); setIncludeNR(true) }}
+                onClick={() => { setSearch(''); setFilterType(''); setFilterFormat(''); setFilterLabel(''); setFilterGenre(''); setFilterRating(''); setRatingMode('exact'); setIncludeNR(true) }}
                 className="text-sm text-warm-gray bg-transparent border-none cursor-pointer font-serif underline whitespace-nowrap"
               >
                 Clear filters
