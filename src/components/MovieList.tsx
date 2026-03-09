@@ -17,7 +17,7 @@ type Props = {
   onEdit: (movie: Movie) => void
   onViewModeChange: (mode: 'list' | 'grid') => void
   onShuffle: (ids: string[]) => void
-  onMovieAdded: () => void
+  onMovieAdded: (newId: string) => void
 }
 
 export default function MovieList({
@@ -154,8 +154,8 @@ export default function MovieList({
           <ErrorBoundary>
             <AddMovieForm
               movies={movies}
-              onMovieAdded={() => {
-                onMovieAdded()
+              onMovieAdded={(newId: string) => {
+                onMovieAdded(newId)
                 setShowAddForm(true)
               }}
             />

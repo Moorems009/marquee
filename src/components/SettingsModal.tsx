@@ -16,15 +16,18 @@ type Props = {
   onClose: () => void
   onSave: (settings: UserSettings) => void
   onRefreshComplete: () => void
+  onClearLibrary: () => void
 }
 
-export default function SettingsModal({ currentSettings, movies, onClose, onSave, onRefreshComplete }: Props) {
+export default function SettingsModal({ currentSettings, movies, onClose, onSave, onRefreshComplete, onClearLibrary }: Props) {
   const supabase = createClient()
   const [nightMode, setNightMode] = useState(currentSettings.nightMode)
   const [saving, setSaving] = useState(false)
   const [refreshState, setRefreshState] = useState<'idle' | 'running' | 'done'>('idle')
   const [refreshProgress, setRefreshProgress] = useState<{ current: number; total: number } | null>(null)
   const [refreshSummary, setRefreshSummary] = useState<{ updated: number; skipped: number; notFound: string[] } | null>(null)
+  const [clearConfirm, setClearConfirm] = useState(false)
+  const [clearing, setClearing] = useState(false)
 
   async function handleRefreshTMDB() {
     const needsData = movies.filter((m) => !m.mpaa_rating || !m.director || !m.poster_url || !m.genre)
@@ -82,6 +85,25 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
     setRefreshSummary({ updated, skipped: movies.length - needsData.length, notFound })
     setRefreshState('done')
     onRefreshComplete()
+  }
+
+  async function handleClearLibrary() {
+    setClearing(true)
+    const { data: authData } = await supabase.auth.getUser()
+    const user = authData.user
+    if (!user) { setClearing(false); return }
+
+    const { data: userMovies } = await supabase.from('movies').select('id').eq('user_id', user.id)
+    if (userMovies && userMovies.length > 0) {
+      const ids = userMovies.map((m: { id: string }) => m.id)
+      await supabase.from('movie_labels').delete().in('movie_id', ids)
+      await supabase.from('movies').delete().eq('user_id', user.id)
+    }
+
+    setClearing(false)
+    setClearConfirm(false)
+    onClearLibrary()
+    onClose()
   }
 
   async function handleSave() {
@@ -188,6 +210,41 @@ export default function SettingsModal({ currentSettings, movies, onClose, onSave
                   ))}
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Danger Zone */}
+        <div className="mb-6 pt-6 border-t border-powder-blue">
+          <div className={`${fieldLabelStyle} mb-2`}>Danger Zone</div>
+          {!clearConfirm ? (
+            <button
+              onClick={() => setClearConfirm(true)}
+              disabled={movies.length === 0}
+              className={`border border-dusty-rose text-dusty-rose bg-transparent px-4 py-1.5 font-serif text-sm rounded-sm ${movies.length === 0 ? 'opacity-40 cursor-default' : 'cursor-pointer'}`}
+            >
+              Clear Library
+            </button>
+          ) : (
+            <div className="bg-white border border-dusty-rose rounded p-4">
+              <p className="text-sm text-navy mt-0 mb-3">
+                This will permanently delete all <strong>{movies.length}</strong> movie{movies.length !== 1 ? 's' : ''} from your shelf. This cannot be undone.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setClearConfirm(false)}
+                  className="border border-warm-gray text-warm-gray bg-transparent px-4 py-1.5 cursor-pointer font-serif text-sm rounded-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleClearLibrary}
+                  disabled={clearing}
+                  className={`border-none text-white bg-dusty-rose px-4 py-1.5 font-serif text-sm rounded-sm ${clearing ? 'opacity-60 cursor-default' : 'cursor-pointer'}`}
+                >
+                  {clearing ? 'Clearing…' : 'Yes, delete all'}
+                </button>
+              </div>
             </div>
           )}
         </div>

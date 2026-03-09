@@ -8,7 +8,7 @@ import { inputStyle, sectionHeadingStyle } from '@/lib/styles'
 
 type Props = {
   movies: Movie[]
-  onMovieAdded: () => void
+  onMovieAdded: (newId: string) => void
 }
 
 export default function AddMovieForm({ movies, onMovieAdded }: Props) {
@@ -83,12 +83,14 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
     const { data: authData } = await supabase.auth.getUser()
     const user = authData.user
 
-    const { error } = await supabase
+    const { data: inserted, error } = await supabase
       .from('movies')
       .insert([{ title, year: parseInt(year), format, imprint, director, poster_url: posterUrl || null, mpaa_rating: mpaaRating || null, genre: genre || null, user_id: user?.id }])
+      .select('id')
+      .single()
 
-    if (error) {
-      setMessage(`Error: ${error.message}`)
+    if (error || !inserted) {
+      setMessage(`Error: ${error?.message}`)
     } else {
       setMessage('Movie added!')
       setTitle('')
@@ -100,7 +102,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
       setMpaaRating('')
       setGenre('')
       setPendingConfirm(false)
-      onMovieAdded()
+      onMovieAdded(inserted.id)
     }
   }
 

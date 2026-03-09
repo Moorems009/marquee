@@ -27,7 +27,7 @@ type ImportRow = {
 type Props = {
   existingMovies: Movie[]
   onClose: () => void
-  onImportComplete: () => void
+  onImportComplete: (importedIds: string[]) => void
 }
 
 export default function ImportCSVModal({ existingMovies, onClose, onImportComplete }: Props) {
@@ -129,7 +129,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     reader.readAsText(file)
   }
 
-  async function importRow(importRow: ImportRow): Promise<'imported' | 'error'> {
+  async function importRow(importRow: ImportRow): Promise<string | 'error'> {
     const { data: authData } = await supabase.auth.getUser()
     const user = authData.user
     if (!user) return 'error'
@@ -211,7 +211,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
       }
     }
 
-    return 'imported'
+    return movieData.id
   }
 
   async function runImport(rowsToImport: ImportRow[]) {
@@ -219,6 +219,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     let imported = 0
     let skipped = 0
     let errors = 0
+    const importedIds: string[] = []
 
     const total = rowsToImport.filter((r) => r.status === 'pending').length
     let current = 0
@@ -235,8 +236,9 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         current++
         setProgress({ current, total })
 
-        if (result === 'imported') {
+        if (result !== 'error') {
           imported++
+          importedIds.push(result)
           updatedRows[i] = { ...updatedRows[i], status: 'done' }
         } else {
           errors++
@@ -251,7 +253,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     setSummary({ imported, skipped, errors })
     setProgress(null)
     setIsImporting(false)
-    onImportComplete()
+    onImportComplete(importedIds)
   }
 
   async function handleSkipAll() {

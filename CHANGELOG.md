@@ -12,6 +12,22 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.40.0] - 2026-03-09
+
+### feat
+- Clear Library option in Settings → Danger Zone; two-step confirmation shows movie count before deleting; clears all movies, movie_labels, and Now Playing for the current user
+
+---
+
+
+## [0.39.0] - 2026-03-09
+
+### feat
+- Auto-populate Now Playing on first movies: adding movies individually fills open Now Playing slots one by one until 3 are occupied; importing via CSV fills open slots with a random selection from the imported batch; existing Now Playing state is never overwritten
+
+---
+
+
 ## [0.38.0] - 2026-03-08
 
 ### feat

@@ -217,7 +217,12 @@ export default function MovieLibrary() {
           onEdit={openEdit}
           onViewModeChange={handleViewModeChange}
           onShuffle={handleShuffle}
-          onMovieAdded={fetchMovies}
+          onMovieAdded={async (newId: string) => {
+            await fetchMovies()
+            if (nowPlayingIds.length < 3) {
+              await persistNowPlaying([...nowPlayingIds, newId])
+            }
+          }}
         />
       </ErrorBoundary>
 
@@ -254,6 +259,7 @@ export default function MovieLibrary() {
             onClose={() => setShowSettingsModal(false)}
             onSave={(settings) => setNightMode(settings.nightMode)}
             onRefreshComplete={fetchMovies}
+          onClearLibrary={async () => { await persistNowPlaying([]); fetchMovies(); fetchMovieLabels() }}
           />
         </ErrorBoundary>
       )}
@@ -262,10 +268,15 @@ export default function MovieLibrary() {
           <ImportCSVModal
             existingMovies={movies}
             onClose={() => setShowImportModal(false)}
-            onImportComplete={() => {
-              fetchMovies()
+            onImportComplete={async (importedIds: string[]) => {
+              await fetchMovies()
               fetchMovieLabels()
               setShowImportModal(false)
+              if (nowPlayingIds.length < 3 && importedIds.length > 0) {
+                const slots = 3 - nowPlayingIds.length
+                const shuffled = [...importedIds].sort(() => Math.random() - 0.5)
+                await persistNowPlaying([...nowPlayingIds, ...shuffled.slice(0, slots)])
+              }
             }}
           />
         </ErrorBoundary>
