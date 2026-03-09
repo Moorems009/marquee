@@ -16,7 +16,7 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ### feat
 - Import CSV modal expands to near-fullscreen (`max-w-5xl`) during the collection review step, then shrinks back to the standard width (`max-w-140`) for all other steps; width transition is animated
-- During the review step the layout switches to two columns: review cards fill the left side, the full row preview list is pinned to a 280 px right column for constant visibility
+- Review panels (TMDB-matched and not-found) render full-width in the wider modal; row preview list renders below as normal
 
 ---
 

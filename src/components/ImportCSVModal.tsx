@@ -663,62 +663,55 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
           </div>
         )}
 
-        {/* Review step — two-column layout: review panels left, row list right */}
-        {isReviewStep && (
-          <div className="grid grid-cols-[1fr_280px] gap-6 mb-4">
-            <div className="flex flex-col gap-4 min-w-0">
-              {reviewingCollections.length > 0 && (
-                <div className="bg-white border border-powder-blue rounded p-4">
-                  <div className="text-[0.8rem] font-bold text-navy mb-1">
-                    Review {reviewingCollections.length} expanded collection{reviewingCollections.length !== 1 ? 's' : ''}
-                  </div>
-                  <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
-                    Remove any films you don&apos;t want imported. Collections with all films removed will be kept as a single entry.
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    {reviewingCollections.map(r => (
-                      <CollectionReviewCard
-                        key={r.key}
-                        row={r}
-                        parts={reviewParts[r.key] || []}
-                        onPartsChange={(parts) => setReviewParts(prev => ({ ...prev, [r.key]: parts }))}
-                        onKeepAsIs={() => handleKeepCollection(r.key)}
-                      />
-                    ))}
-                  </div>
-                  <button
-                    onClick={handleConfirmAllReviews}
-                    className="mt-4 bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm font-bold"
-                  >
-                    Confirm all expansions
-                  </button>
-                </div>
-              )}
-              {notFoundCollections.length > 0 && (
-                <div className="bg-white border border-blush rounded p-4">
-                  <div className="text-[0.8rem] font-bold text-navy mb-1">
-                    {notFoundCollections.length} collection{notFoundCollections.length !== 1 ? 's' : ''} not found on TMDB
-                  </div>
-                  <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
-                    Search for films to add manually, or keep as a single entry.
-                    {useCollectionLabel && <span className="italic"> Collection title will be applied as a label.</span>}
-                  </p>
-                  <div className="flex flex-col gap-4">
-                    {notFoundCollections.map(r => (
-                      <CollectionNotFoundCard
-                        key={r.key}
-                        row={r}
-                        useCollectionLabel={useCollectionLabel}
-                        onKeepAsIs={() => handleKeepCollection(r.key)}
-                        onConfirm={(parts) => handleConfirmManual(r.key, parts)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+        {/* Review panel — TMDB-matched collections awaiting film-level confirmation */}
+        {isParsed && reviewingCollections.length > 0 && !summary && (
+          <div className="bg-white border border-powder-blue rounded p-4 mb-4">
+            <div className="text-[0.8rem] font-bold text-navy mb-1">
+              Review {reviewingCollections.length} expanded collection{reviewingCollections.length !== 1 ? 's' : ''}
             </div>
-            <div className="flex flex-col gap-0 shrink-0">
-              {rowPreview}
+            <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
+              Remove any films you don&apos;t want imported. Collections with all films removed will be kept as a single entry.
+            </p>
+            <div className="flex flex-col gap-3">
+              {reviewingCollections.map(r => (
+                <CollectionReviewCard
+                  key={r.key}
+                  row={r}
+                  parts={reviewParts[r.key] || []}
+                  onPartsChange={(parts) => setReviewParts(prev => ({ ...prev, [r.key]: parts }))}
+                  onKeepAsIs={() => handleKeepCollection(r.key)}
+                />
+              ))}
+            </div>
+            <button
+              onClick={handleConfirmAllReviews}
+              className="mt-4 bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif rounded-sm text-sm font-bold"
+            >
+              Confirm all expansions
+            </button>
+          </div>
+        )}
+
+        {/* Individual review for collections with no TMDB match */}
+        {isParsed && notFoundCollections.length > 0 && !summary && (
+          <div className="bg-white border border-blush rounded p-4 mb-4">
+            <div className="text-[0.8rem] font-bold text-navy mb-1">
+              {notFoundCollections.length} collection{notFoundCollections.length !== 1 ? 's' : ''} not found on TMDB
+            </div>
+            <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
+              Search for films to add manually, or keep as a single entry.
+              {useCollectionLabel && <span className="italic"> Collection title will be applied as a label.</span>}
+            </p>
+            <div className="flex flex-col gap-4">
+              {notFoundCollections.map(r => (
+                <CollectionNotFoundCard
+                  key={r.key}
+                  row={r}
+                  useCollectionLabel={useCollectionLabel}
+                  onKeepAsIs={() => handleKeepCollection(r.key)}
+                  onConfirm={(parts) => handleConfirmManual(r.key, parts)}
+                />
+              ))}
             </div>
           </div>
         )}
@@ -744,8 +737,8 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
           </div>
         )}
 
-        {/* Row preview — shown inline when not in review step */}
-        {!isReviewStep && rowPreview}
+        {/* Row preview */}
+        {rowPreview}
 
         {/* Progress bar */}
         {progress && (
