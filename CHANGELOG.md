@@ -12,6 +12,15 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.54.0] - 2026-03-09
+
+### feat
+- Parse format (Blu-ray, 4K, DVD, VHS, Digital) and strip it — along with release year — from raw UPCitemdb titles before TMDB search, so the clean movie title is used for lookup
+- Return detected format from `/api/barcode`; format select in Add Movie form is pre-filled automatically on barcode scan
+
+---
+
+
 ## [0.53.4] - 2026-03-09
 
 ### fix

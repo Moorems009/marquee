@@ -3,6 +3,44 @@ import { createServerSupabaseClient } from '@/lib/supabase-server'
 
 const TMDB_BASE = 'https://api.themoviedb.org/3'
 
+// Format aliases ordered so "4K UHD" matches before plain "4K" or "UHD"
+const FORMAT_PATTERNS: [RegExp, string][] = [
+  [/\b4K[\s/]?UHD\b/i, '4K'],
+  [/\bUHD\b/i, '4K'],
+  [/\b4K\b/i, '4K'],
+  [/\bBlu[-\s]?Ray\b/i, 'Blu-ray'],
+  [/\bBD\b/, 'Blu-ray'],
+  [/\bDVD\b/i, 'DVD'],
+  [/\bVHS\b/i, 'VHS'],
+  [/\bDigital\s*HD\b/i, 'Digital'],
+  [/\bDigital\b/i, 'Digital'],
+]
+
+function parseUPCTitle(raw: string): { cleanTitle: string; detectedFormat: string | null } {
+  let detectedFormat: string | null = null
+  for (const [pattern, format] of FORMAT_PATTERNS) {
+    if (pattern.test(raw)) { detectedFormat = format; break }
+  }
+
+  const clean = raw
+    // Remove entire [...] blocks (e.g. "[Blu-Ray]")
+    .replace(/\[[^\]]*\]/g, '')
+    // Remove (...) blocks that are a year or a recognized format (e.g. "(4K/UHD)", "(2025)")
+    .replace(/\([^)]*\)/g, (m) => {
+      const inner = m.slice(1, -1).trim()
+      if (/^\d{4}$/.test(inner)) return ''
+      if (FORMAT_PATTERNS.some(([pat]) => pat.test(inner))) return ''
+      return m
+    })
+    .replace(/\s+/g, ' ')
+    .trim()
+    // Strip trailing bare year ("Sinners 2025")
+    .replace(/\s+\d{4}$/, '')
+    .trim()
+
+  return { cleanTitle: clean || raw, detectedFormat }
+}
+
 type CacheRow = {
   upc: string
   tmdb_id: number | null
@@ -33,6 +71,7 @@ export async function GET(req: NextRequest) {
   let tmdbId: number | null = cached?.tmdb_id ?? null
   let baseTitle: string | null = cached?.title ?? null
   let baseYear: number | null = cached?.year ?? null
+  let detectedFormat: string | null = null
 
   // --- Cache miss: look up UPC ---
   if (!cached) {
@@ -42,7 +81,9 @@ export async function GET(req: NextRequest) {
         const upcData = await upcRes.json()
         const item = upcData.items?.[0]
         if (item?.title) {
-          baseTitle = item.title as string
+          const parsed = parseUPCTitle(item.title as string)
+          baseTitle = parsed.cleanTitle
+          detectedFormat = parsed.detectedFormat
         }
       }
     } catch {
@@ -135,5 +176,5 @@ export async function GET(req: NextRequest) {
     } catch { /* return what we have */ }
   }
 
-  return NextResponse.json({ title, year, tmdb_id: tmdbId, poster_url: posterUrl, director, mpaa_rating: mpaaRating, genre })
+  return NextResponse.json({ title, year, tmdb_id: tmdbId, poster_url: posterUrl, director, mpaa_rating: mpaaRating, genre, format: detectedFormat })
 }

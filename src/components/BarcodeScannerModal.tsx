@@ -9,6 +9,7 @@ export type BarcodeResult = {
   director: string | null
   mpaa_rating: string | null
   genre: string | null
+  format: string | null
 }
 
 type Props = {

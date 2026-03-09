@@ -73,6 +73,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
     if (result.director) setDirector(result.director)
     if (result.mpaa_rating) setMpaaRating(result.mpaa_rating)
     if (result.genre) setGenre(result.genre)
+    if (result.format) setFormat(result.format)
     setPendingConfirm(false)
   }
 
