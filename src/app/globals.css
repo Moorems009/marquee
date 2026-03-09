@@ -45,6 +45,7 @@ body {
   --color-blush: #00DFFF;
   background-color: #07090F;
   color: #C4D8E8;
+
 }
 
 /* bg-white is a hardcoded Tailwind color (not a CSS variable), override explicitly */

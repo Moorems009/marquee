@@ -12,6 +12,16 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.30.0] - 2026-03-08
+
+### feat
+- Night mode support for Now Playing marquee — `NowPlayingMarquee` accepts a `nightMode` prop and switches between explicit `DAY`/`NIGHT` color palettes
+- Night palette: electric cyan border with glow, hot-magenta neon strips with neon bloom, deep blue-black panel, gold string-light bulbs, light blue title text
+- `MovieLibrary` passes `nightMode` state down to `NowPlayingMarquee`
+
+---
+
+
 ## [0.29.0] - 2026-03-08
 
 ### fix

@@ -196,7 +196,7 @@ export default function MovieLibrary() {
         </div>
       )}
 
-      <NowPlayingMarquee movies={movies} nowPlayingIds={nowPlayingIds} />
+      <NowPlayingMarquee movies={movies} nowPlayingIds={nowPlayingIds} nightMode={nightMode} />
 
       <div className="mb-8">
         <button

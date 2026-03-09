@@ -5,9 +5,40 @@ import { Movie } from '@/lib/types'
 type Props = {
   movies: Movie[]
   nowPlayingIds: string[]
+  nightMode?: boolean
 }
 
-export default function NowPlayingMarquee({ movies, nowPlayingIds }: Props) {
+const DAY = {
+  header: '#C4747C',
+  border: '#A8C4D4',
+  panelBg: '#FDFAF5',
+  neon: '#C4747C',
+  title: '#2C3E6B',
+  subtitle: '#8C7B6B',
+  divider: '#ddd8cf',
+  emptySlot: '#c8c0b4',
+  bulbRow: '#ece7de',
+  bulb: '#F0D882',
+  bulbGlow: 'rgba(240, 216, 130, 0.6)',
+}
+
+const NIGHT = {
+  header: '#FFD97A',
+  border: '#00DFFF',
+  panelBg: '#0D1520',
+  neon: '#FF2878',
+  title: '#C4D8E8',
+  subtitle: '#3A5468',
+  divider: '#152535',
+  emptySlot: '#3A5468',
+  bulbRow: '#07090F',
+  bulb: '#FFD97A',
+  bulbGlow: 'rgba(255, 217, 122, 0.7)',
+}
+
+export default function NowPlayingMarquee({ movies, nowPlayingIds, nightMode }: Props) {
+  const c = nightMode ? NIGHT : DAY
+
   const slots = [0, 1, 2].map(i => {
     const id = nowPlayingIds[i]
     return id ? movies.find(m => m.id === id) ?? null : null
@@ -18,7 +49,7 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds }: Props) {
       {/* "Now Playing" header above the sign */}
       <div style={{
         textAlign: 'center',
-        color: '#C4747C',
+        color: c.header,
         fontFamily: 'Georgia, serif',
         fontSize: '1.6rem',
         fontStyle: 'italic',
@@ -31,18 +62,24 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds }: Props) {
 
       {/* Sign board */}
       <div style={{
-        border: '2px solid #A8C4D4',
+        border: `2px solid ${c.border}`,
         borderRadius: '4px',
         overflow: 'hidden',
-        boxShadow: '0 2px 10px rgba(44,62,107,0.1)'
+        boxShadow: nightMode
+          ? `0 0 18px rgba(0, 223, 255, 0.2), 0 2px 10px rgba(0,0,0,0.6)`
+          : '0 2px 10px rgba(44,62,107,0.1)'
       }}>
         {/* Top neon strip */}
-        <div style={{ height: '5px', backgroundColor: '#C4747C' }} />
+        <div style={{
+          height: '5px',
+          backgroundColor: c.neon,
+          boxShadow: nightMode ? `0 0 8px ${c.neon}` : 'none'
+        }} />
 
         {/* Three panels */}
         <div style={{
           display: 'flex',
-          backgroundColor: '#FDFAF5',
+          backgroundColor: c.panelBg,
           minHeight: '4.5rem'
         }}>
           {slots.map((movie, i) => (
@@ -54,13 +91,13 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds }: Props) {
                 flexDirection: 'column',
                 justifyContent: 'center',
                 padding: '0.75rem 1.25rem',
-                borderRight: i < 2 ? '1px solid #ddd8cf' : 'none'
+                borderRight: i < 2 ? `1px solid ${c.divider}` : 'none'
               }}
             >
               {movie ? (
                 <>
                   <div style={{
-                    color: '#2C3E6B',
+                    color: c.title,
                     fontFamily: 'Georgia, serif',
                     fontSize: '0.95rem',
                     fontWeight: 'bold',
@@ -74,7 +111,7 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds }: Props) {
                   </div>
                   {(movie.year || movie.director) && (
                     <div style={{
-                      color: '#8C7B6B',
+                      color: c.subtitle,
                       fontFamily: 'Georgia, serif',
                       fontSize: '0.7rem',
                       marginTop: '0.25rem',
@@ -86,7 +123,7 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds }: Props) {
                 </>
               ) : (
                 <div style={{
-                  color: '#c8c0b4',
+                  color: c.emptySlot,
                   fontFamily: 'Georgia, serif',
                   fontSize: '0.75rem',
                   letterSpacing: '0.15em'
@@ -99,7 +136,11 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds }: Props) {
         </div>
 
         {/* Bottom neon strip */}
-        <div style={{ height: '5px', backgroundColor: '#C4747C' }} />
+        <div style={{
+          height: '5px',
+          backgroundColor: c.neon,
+          boxShadow: nightMode ? `0 0 8px ${c.neon}` : 'none'
+        }} />
 
         {/* Bulb row */}
         <div style={{
@@ -107,15 +148,15 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds }: Props) {
           justifyContent: 'space-around',
           alignItems: 'center',
           padding: '6px 12px',
-          backgroundColor: '#ece7de'
+          backgroundColor: c.bulbRow
         }}>
           {Array.from({ length: 28 }).map((_, i) => (
             <div key={i} style={{
               width: 7,
               height: 7,
               borderRadius: '50%',
-              backgroundColor: '#F0D882',
-              boxShadow: '0 0 3px 1px rgba(240,216,130,0.6)'
+              backgroundColor: c.bulb,
+              boxShadow: `0 0 3px 1px ${c.bulbGlow}`
             }} />
           ))}
         </div>
