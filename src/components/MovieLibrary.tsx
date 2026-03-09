@@ -245,6 +245,7 @@ export default function MovieLibrary() {
             onDelete={handleDelete}
             onToggleNowPlaying={handleToggleNowPlaying}
             onSelectExistingLabel={async (label) => {
+              if (editMovieLabels.some((l) => String(l.id) === String(label.id))) return
               await addLabelToMovie(editMovie.id, label)
               setEditMovieLabels([...editMovieLabels, label])
             }}

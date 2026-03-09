@@ -12,6 +12,18 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.29.0] - 2026-03-08
+
+### fix
+- Fix label filter always returning no results — root cause: Supabase returns integer IDs as JS numbers, but HTML `<select>` `e.target.value` is always a string, so `[5].includes("5")` evaluated to `false`
+- Normalize all label IDs to strings at the source: `fetchLabels` and `fetchMovieLabels` now coerce `id` to `String(id)` before storing in state
+- `MovieList` filter check coerces `movie.id` and label IDs to strings before comparison
+- Fix duplicate label prevention in `EditMovieModal` — the existing `el.id === l.id` guard was also broken by the integer/string mismatch; now uses `String()` coercion
+- Add explicit duplicate guard in `onSelectExistingLabel` (MovieLibrary): skips `addLabelToMovie` if the label is already in `editMovieLabels`
+
+---
+
+
 ## [0.28.0] - 2026-03-08
 
 ### fix

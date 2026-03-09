@@ -17,7 +17,7 @@ export function useLabels() {
       .eq('user_id', user?.id)
       .order('name', { ascending: true })
 
-    if (!error && data) setLabels(data)
+    if (!error && data) setLabels(data.map((l: Label) => ({ ...l, id: String(l.id) })))
   }
 
   async function fetchMovieLabels() {
@@ -31,14 +31,15 @@ export function useLabels() {
 
     if (!mlError && !lError && mlData && lData && mlData.length > 0) {
       const labelById: Record<string, Label> = {}
-      lData.forEach((l: Label) => { labelById[l.id] = l })
+      lData.forEach((l: Label) => { labelById[String(l.id)] = { ...l, id: String(l.id) } })
 
       const map: Record<string, Label[]> = {}
       mlData.forEach((row: { movie_id: string; label_id: string }) => {
-        const label = labelById[row.label_id]
+        const label = labelById[String(row.label_id)]
         if (label) {
-          if (!map[row.movie_id]) map[row.movie_id] = []
-          map[row.movie_id].push(label)
+          const key = String(row.movie_id)
+          if (!map[key]) map[key] = []
+          map[key].push(label)
         }
       })
       setMovieLabels(map)

@@ -40,7 +40,7 @@ export default function MovieList({
     }
     if (filterFormat && movie.format !== filterFormat) return false
     if (filterLabel) {
-      const ids = (movieLabels[movie.id] || []).map((l) => l.id)
+      const ids = (movieLabels[String(movie.id)] || []).map((l) => String(l.id))
       if (!ids.includes(filterLabel)) return false
     }
     return true

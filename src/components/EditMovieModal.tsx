@@ -51,7 +51,7 @@ export default function EditMovieModal({
     const filtered = labels.filter(
       (l) =>
         l.name.toLowerCase().includes(value.toLowerCase()) &&
-        !editMovieLabels.find((el) => el.id === l.id)
+        !editMovieLabels.find((el) => String(el.id) === String(l.id))
     )
     setLabelSuggestions(filtered)
     setShowLabelDropdown(filtered.length > 0)
