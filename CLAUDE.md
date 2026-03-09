@@ -16,6 +16,9 @@ Marquee is a personal physical media movie library app. Users can catalogue thei
 ```
 src/
   app/
+    api/
+      tmdb/
+        route.ts        ← Server-side TMDB proxy (requires auth session; uses TMDB_TOKEN env var)
     auth/
       page.tsx          ← Sign in / sign up page
     page.tsx            ← Home page (protected, renders MovieLibrary)
@@ -41,9 +44,9 @@ src/
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_TMDB_TOKEN=
+TMDB_TOKEN=
 ```
-Note: TMDB token is currently public (NEXT_PUBLIC_). Before going live this should be moved to a server-side API route.
+TMDB token is server-only — proxied through `/api/tmdb` (requires authenticated session). Never use `NEXT_PUBLIC_TMDB_TOKEN`.
 
 ## Database Schema (Supabase/PostgreSQL)
 
@@ -120,7 +123,6 @@ Styling uses Tailwind CSS v4. Design tokens are registered in `globals.css` via 
   - Import summary (imported / skipped / errors)
 
 ## Pending Features / Known Issues
-- **TMDB token is public** — should be proxied through a Next.js API route (`/api/tmdb`) so the token stays server-side
 - Search and filter library by title, director, label, format
 - Sort library by title, year, director, format
 - Session expiry handling — expired sessions should redirect to /auth gracefully

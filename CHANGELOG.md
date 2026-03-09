@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.38.0] - 2026-03-08
+
+### feat
+- TMDB API proxied through `/api/tmdb` server-side route — token is no longer exposed to the browser; all TMDB requests require an authenticated Supabase session
+
+---
+
+
 ## [0.37.0] - 2026-03-08
 
 ### feat
