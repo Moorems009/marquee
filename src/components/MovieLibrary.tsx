@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase'
 import { useMovies } from '@/hooks/useMovies'
 import { useLabels } from '@/hooks/useLabels'
 import { Movie, Label } from '@/lib/types'
-import AddMovieForm from './AddMovieForm'
 import MovieList from './MovieList'
 import EditMovieModal from './EditMovieModal'
 import ImportCSVModal from './ImportCSVModal'
@@ -30,7 +29,6 @@ export default function MovieLibrary() {
   const [nightMode, setNightMode] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
   const [nowPlayingIds, setNowPlayingIds] = useState<string[]>([])
-  const [showAddForm, setShowAddForm] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -60,6 +58,16 @@ export default function MovieLibrary() {
     const { data: authData } = await supabase.auth.getUser()
     const existing = authData.user?.user_metadata?.settings || {}
     await supabase.auth.updateUser({ data: { settings: { ...existing, hasSeenWelcome: true } } })
+  }
+
+  async function handleShuffle() {
+    if (movies.length === 0) return
+    const shuffled = [...movies].sort(() => Math.random() - 0.5)
+    const picked = shuffled.slice(0, Math.min(3, movies.length)).map(m => m.id)
+    const { data: authData } = await supabase.auth.getUser()
+    const existing = authData.user?.user_metadata?.settings || {}
+    await supabase.auth.updateUser({ data: { settings: { ...existing, nowPlaying: picked } } })
+    setNowPlayingIds(picked)
   }
 
   async function handleToggleNowPlaying(movieId: string) {
@@ -181,7 +189,7 @@ export default function MovieLibrary() {
           </p>
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => { dismissWelcome(); setShowAddForm(true) }}
+              onClick={dismissWelcome}
               className="bg-powder-blue text-navy border-none px-4 py-1.5 cursor-pointer font-serif text-sm rounded-sm"
             >
               Add a movie ↓
@@ -198,28 +206,6 @@ export default function MovieLibrary() {
 
       <NowPlayingMarquee movies={movies} nowPlayingIds={nowPlayingIds} nightMode={nightMode} />
 
-      <div className="mb-8">
-        <button
-          onClick={() => setShowAddForm((v) => !v)}
-          className="flex items-center gap-2 bg-transparent border border-powder-blue text-navy px-4 py-1.5 cursor-pointer font-serif text-sm rounded-sm"
-        >
-          <span>{showAddForm ? '−' : '+'}</span> Add a movie
-        </button>
-        {showAddForm && (
-          <div className="mt-3">
-            <ErrorBoundary>
-              <AddMovieForm
-                movies={movies}
-                onMovieAdded={() => {
-                  fetchMovies()
-                  setShowAddForm(true)
-                }}
-              />
-            </ErrorBoundary>
-          </div>
-        )}
-      </div>
-
       <ErrorBoundary>
         <MovieList
           movies={movies}
@@ -229,6 +215,8 @@ export default function MovieLibrary() {
           movieLabels={movieLabels}
           onEdit={openEdit}
           onViewModeChange={handleViewModeChange}
+          onShuffle={handleShuffle}
+          onMovieAdded={fetchMovies}
         />
       </ErrorBoundary>
 

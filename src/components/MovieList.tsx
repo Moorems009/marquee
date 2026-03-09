@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Movie, Label } from '@/lib/types'
 import { sectionHeadingStyle, inputStyle } from '@/lib/styles'
+import AddMovieForm from './AddMovieForm'
+import ErrorBoundary from './ErrorBoundary'
 
 type SortKey = 'title-asc' | 'title-desc' | 'year-desc' | 'year-asc' | 'director' | 'format' | 'genre' | 'rating'
 
@@ -14,6 +16,8 @@ type Props = {
   movieLabels: Record<string, Label[]>
   onEdit: (movie: Movie) => void
   onViewModeChange: (mode: 'list' | 'grid') => void
+  onShuffle: () => void
+  onMovieAdded: () => void
 }
 
 export default function MovieList({
@@ -23,8 +27,11 @@ export default function MovieList({
   viewMode,
   movieLabels,
   onEdit,
-  onViewModeChange
+  onViewModeChange,
+  onShuffle,
+  onMovieAdded
 }: Props) {
+  const [showAddForm, setShowAddForm] = useState(false)
   const [search, setSearch] = useState('')
   const [filterFormat, setFilterFormat] = useState('')
   const [filterLabel, setFilterLabel] = useState('')
@@ -76,7 +83,7 @@ export default function MovieList({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-2">
         <h2 className={sectionHeadingStyle}>My Shelf</h2>
         <div className="flex gap-2">
           {!loading && movies.length > 0 && (
@@ -92,6 +99,35 @@ export default function MovieList({
           </button>
         </div>
       </div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button
+          onClick={() => setShowAddForm((v) => !v)}
+          className="flex items-center gap-2 bg-transparent border border-powder-blue text-navy px-4 py-1.5 cursor-pointer font-serif text-sm rounded-sm"
+        >
+          <span>{showAddForm ? '−' : '+'}</span> Add a movie
+        </button>
+        {!loading && movies.length > 0 && (
+          <button
+            onClick={onShuffle}
+            className="bg-transparent border border-powder-blue text-warm-gray px-3 py-1.5 cursor-pointer font-serif text-sm rounded-sm"
+          >
+            ↺ Shuffle Now Playing
+          </button>
+        )}
+      </div>
+      {showAddForm && (
+        <div className="mb-6">
+          <ErrorBoundary>
+            <AddMovieForm
+              movies={movies}
+              onMovieAdded={() => {
+                onMovieAdded()
+                setShowAddForm(true)
+              }}
+            />
+          </ErrorBoundary>
+        </div>
+      )}
 
       {/* Collapsible filter + sort bar */}
       {showFilters && !loading && movies.length > 0 && (

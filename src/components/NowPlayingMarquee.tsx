@@ -161,6 +161,7 @@ export default function NowPlayingMarquee({ movies, nowPlayingIds, nightMode }: 
           ))}
         </div>
       </div>
+
     </div>
   )
 }

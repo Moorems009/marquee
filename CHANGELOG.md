@@ -12,6 +12,15 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.31.0] - 2026-03-08
+
+### feat
+- "Add a movie" button and form moved into My Shelf section (was above it); now renders left-aligned below the My Shelf heading alongside "Shuffle Now Playing"
+- "Shuffle Now Playing" button below the My Shelf heading — picks 3 random titles from the shelf and sets them as Now Playing, persisted to Supabase user metadata
+
+---
+
+
 ## [0.30.0] - 2026-03-08
 
 ### feat
