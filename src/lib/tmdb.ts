@@ -25,3 +25,15 @@ export async function getMovieGenre(tmdbId: number) {
 export function getPosterUrl(posterPath: string, size: 'w92' | 'w500' = 'w500') {
   return `https://image.tmdb.org/t/p/${size}${posterPath}`
 }
+
+export async function searchCollection(query: string) {
+  const res = await fetch(`/api/tmdb?action=search_collection&query=${encodeURIComponent(query)}`)
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function getCollectionParts(collectionId: number) {
+  const res = await fetch(`/api/tmdb?action=collection_parts&id=${collectionId}`)
+  if (!res.ok) return []
+  return res.json()
+}

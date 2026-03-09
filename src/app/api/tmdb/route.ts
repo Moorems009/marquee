@@ -57,5 +57,29 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ genre })
   }
 
+  if (action === 'search_collection') {
+    const query = searchParams.get('query') ?? ''
+    const res = await fetch(
+      `${TMDB_BASE}/search/collection?query=${encodeURIComponent(query)}&language=en-US`,
+      { headers }
+    )
+    const data = await res.json()
+    return NextResponse.json(data.results?.slice(0, 3) ?? [])
+  }
+
+  if (action === 'collection_parts') {
+    const id = searchParams.get('id') ?? ''
+    const res = await fetch(`${TMDB_BASE}/collection/${id}`, { headers })
+    const data = await res.json()
+    const parts = (data.parts ?? [])
+      .sort((a: { release_date: string }, b: { release_date: string }) =>
+        (a.release_date ?? '').localeCompare(b.release_date ?? '')
+      )
+      .map((p: { id: number; title: string; release_date: string; poster_path?: string }) => ({
+        id: p.id, title: p.title, release_date: p.release_date, poster_path: p.poster_path
+      }))
+    return NextResponse.json(parts)
+  }
+
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
 }

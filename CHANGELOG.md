@@ -12,6 +12,19 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.44.0] - 2026-03-09
+
+### feat
+- Collection handling in CSV import: rows containing " / " (e.g. "Evil Dead / Evil Dead 2") or keywords like "Trilogy", "Collection", "Saga", "Series" are flagged as collections in the preview step
+- Slash-delimited rows split immediately into individual film rows with no API call needed
+- Named collections look up TMDB's collection API to retrieve constituent films in release order
+- User can expand a collection into individual films or keep it as a single entry
+- Option to use the original collection title as a label applied to all expanded films
+- Import button is hidden until all detected collections are resolved
+
+---
+
+
 ## [0.43.0] - 2026-03-09
 
 ### perf

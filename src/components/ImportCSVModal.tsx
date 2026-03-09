@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl } from '@/lib/tmdb'
+import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl, searchCollection, getCollectionParts } from '@/lib/tmdb'
 import { Movie } from '@/lib/types'
 import { inputStyle } from '@/lib/styles'
 
@@ -15,13 +15,30 @@ type CSVRow = {
   labels?: string
 }
 
-type ImportStatus = 'pending' | 'duplicate' | 'importing' | 'done' | 'error'
+type CollectionPart = {
+  id: number
+  title: string
+  release_date: string
+  poster_path?: string
+}
+
+type CollectionExpand = {
+  collectionType: 'slash' | 'tmdb'
+  loading: boolean
+  parts: CollectionPart[]
+  notFound: boolean
+  useAsLabel: boolean
+}
+
+type ImportStatus = 'pending' | 'duplicate' | 'importing' | 'done' | 'error' | 'collection'
 
 type ImportRow = {
+  key: string
   row: CSVRow
   status: ImportStatus
   message?: string
   warning?: string
+  collectionLabel?: string
 }
 
 type Props = {
@@ -33,7 +50,9 @@ type Props = {
 export default function ImportCSVModal({ existingMovies, onClose, onImportComplete }: Props) {
   const supabase = createClient()
   const fileRef = useRef<HTMLInputElement>(null)
+  const rowKeyCounter = useRef(0)
   const [rows, setRows] = useState<ImportRow[]>([])
+  const [expandStates, setExpandStates] = useState<Record<string, CollectionExpand>>({})
   const [isParsed, setIsParsed] = useState(false)
   const [fallbackFormat, setFallbackFormat] = useState('Blu-ray')
   const [isImporting, setIsImporting] = useState(false)
@@ -49,6 +68,11 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     if (['vhs'].includes(val)) return 'VHS'
     if (['digital', 'dig', 'stream', 'streaming'].includes(val)) return 'Digital'
     return null
+  }
+
+  function isCollectionRow(title: string): boolean {
+    if (title.includes(' / ')) return true
+    return /\b(collection|trilogy|saga|series)\b/i.test(title)
   }
 
   function parseCSV(text: string): CSVRow[] {
@@ -103,7 +127,10 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     reader.onload = (evt) => {
       const text = evt.target?.result as string
       const parsed = parseCSV(text)
+      const initialExpandStates: Record<string, CollectionExpand> = {}
+
       const importRows: ImportRow[] = parsed.map((row) => {
+        const key = String(rowKeyCounter.current++)
         const normalizedRowFormat = row.format ? normalizeFormat(row.format) : null
         const isDuplicate = existingMovies.some(
           (m) =>
@@ -117,16 +144,83 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
           ? `Unknown format "${row.format}" — will use fallback`
           : undefined
 
+        const isCollection = !isDuplicate && isCollectionRow(row.title)
+
+        if (isCollection) {
+          const collectionType = row.title.includes(' / ') ? 'slash' : 'tmdb'
+          const parts: CollectionPart[] = collectionType === 'slash'
+            ? row.title.split(' / ').map((t, i) => ({ id: i, title: t.trim(), release_date: '' }))
+            : []
+          initialExpandStates[key] = { collectionType, loading: false, parts, notFound: false, useAsLabel: true }
+        }
+
         return {
+          key,
           row,
-          status: isDuplicate ? 'duplicate' : 'pending',
-          warning: formatWarning
+          status: isDuplicate ? 'duplicate' : isCollection ? 'collection' : 'pending',
+          warning: formatWarning,
+          collectionLabel: isCollection ? row.title : undefined
         }
       })
+
       setRows(importRows)
+      setExpandStates(initialExpandStates)
       setIsParsed(true)
     }
     reader.readAsText(file)
+  }
+
+  async function handleExpandTMDB(key: string, title: string) {
+    setExpandStates(prev => ({ ...prev, [key]: { ...prev[key], loading: true, notFound: false } }))
+    try {
+      const collections = await searchCollection(title)
+      if (collections.length > 0) {
+        const parts = await getCollectionParts(collections[0].id)
+        if (parts.length > 0) {
+          setExpandStates(prev => ({ ...prev, [key]: { ...prev[key], loading: false, parts } }))
+        } else {
+          setExpandStates(prev => ({ ...prev, [key]: { ...prev[key], loading: false, notFound: true } }))
+        }
+      } else {
+        setExpandStates(prev => ({ ...prev, [key]: { ...prev[key], loading: false, notFound: true } }))
+      }
+    } catch {
+      setExpandStates(prev => ({ ...prev, [key]: { ...prev[key], loading: false, notFound: true } }))
+    }
+  }
+
+  function handleConfirmExpansion(key: string) {
+    const expandState = expandStates[key]
+    const rowIndex = rows.findIndex(r => r.key === key)
+    if (rowIndex === -1 || !expandState || expandState.parts.length === 0) return
+
+    const originalRow = rows[rowIndex]
+    const labelName = expandState.useAsLabel ? originalRow.collectionLabel : undefined
+
+    const newRows: ImportRow[] = expandState.parts.map(part => {
+      const partYear = part.release_date ? part.release_date.split('-')[0] : originalRow.row.year
+      const labels = labelName
+        ? [originalRow.row.labels, labelName].filter(Boolean).join(';')
+        : originalRow.row.labels
+      return {
+        key: String(rowKeyCounter.current++),
+        row: { ...originalRow.row, title: part.title, year: partYear, labels },
+        status: 'pending' as ImportStatus,
+        warning: originalRow.warning
+      }
+    })
+
+    const updatedRows = [...rows]
+    updatedRows.splice(rowIndex, 1, ...newRows)
+    setRows(updatedRows)
+  }
+
+  function handleKeepAsIs(key: string) {
+    setRows(prev => prev.map(r => r.key === key ? { ...r, status: 'pending' as ImportStatus } : r))
+  }
+
+  function toggleUseAsLabel(key: string) {
+    setExpandStates(prev => ({ ...prev, [key]: { ...prev[key], useAsLabel: !prev[key].useAsLabel } }))
   }
 
   function normTitle(t: string) {
@@ -136,15 +230,12 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
   function findBestMatch(results: Array<{ title: string; release_date: string; id: number; poster_path?: string }>, searchTitle: string, year?: string) {
     if (results.length === 0) return null
     const searchNorm = normTitle(searchTitle)
-    // Exact normalized match with year
     if (year) {
       const hit = results.find(r => normTitle(r.title) === searchNorm && r.release_date?.startsWith(year))
       if (hit) return hit
     }
-    // Exact normalized match without year constraint
     const hit = results.find(r => normTitle(r.title) === searchNorm)
     if (hit) return hit
-    // TMDB search handles typos well — trust top result
     return results[0]
   }
 
@@ -354,6 +445,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     if (status === 'error') return '✗'
     if (status === 'importing') return '…'
     if (status === 'duplicate') return '!'
+    if (status === 'collection') return '⊕'
     return '·'
   }
 
@@ -362,8 +454,12 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
     if (status === 'error') return 'text-dusty-rose'
     if (status === 'importing') return 'text-butter'
     if (status === 'duplicate') return 'text-blush'
+    if (status === 'collection') return 'text-powder-blue'
     return 'text-warm-gray'
   }
+
+  const hasUnresolvedCollections = rows.some(r => r.status === 'collection')
+  const collectionCount = rows.filter(r => r.status === 'collection').length
 
   return (
     <div
@@ -409,6 +505,14 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
               className={inputStyle}
               style={{ cursor: 'pointer' }}
             />
+          </div>
+        )}
+
+        {/* Collection resolution notice */}
+        {isParsed && hasUnresolvedCollections && !summary && (
+          <div className="bg-white border border-powder-blue rounded p-3 mb-4 text-[0.8rem] text-navy">
+            <strong>{collectionCount} collection{collectionCount !== 1 ? 's' : ''} detected</strong>
+            <span className="text-warm-gray ml-1">— expand each into individual films or keep as a single entry before importing.</span>
           </div>
         )}
 
@@ -468,33 +572,115 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
               {rows.filter(r => r.status === 'duplicate').length > 0 &&
                 ` · ${rows.filter(r => r.status === 'duplicate').length} duplicate${rows.filter(r => r.status === 'duplicate').length !== 1 ? 's' : ''}`
               }
+              {collectionCount > 0 &&
+                ` · ${collectionCount} collection${collectionCount !== 1 ? 's' : ''}`
+              }
               {rows.filter(r => r.warning).length > 0 &&
                 ` · ${rows.filter(r => r.warning).length} format warning${rows.filter(r => r.warning).length !== 1 ? 's' : ''}`
               }
             </p>
             <div className="border border-powder-blue rounded overflow-hidden max-h-75 overflow-y-auto">
-              {rows.map((r, i) => (
-                <div
-                  key={i}
-                  className={`flex flex-col gap-1 px-3 py-2 border-b border-powder-blue text-[0.8rem] ${i % 2 === 0 ? 'bg-white' : 'bg-cream'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`font-bold w-3 text-center ${statusClass(r.status)}`}>
-                      {statusIcon(r.status)}
-                    </span>
-                    <span className="text-navy flex-1">
-                      {r.row.title}
-                      {r.row.year && <span className="text-warm-gray ml-1">({r.row.year})</span>}
-                    </span>
-                    {r.message && (
-                      <span className="text-warm-gray text-[0.75rem] italic">{r.message}</span>
+              {rows.map((r, i) => {
+                const expand = r.key ? expandStates[r.key] : undefined
+                return (
+                  <div
+                    key={r.key}
+                    className={`flex flex-col gap-1 px-3 py-2 border-b border-powder-blue text-[0.8rem] ${i % 2 === 0 ? 'bg-white' : 'bg-cream'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`font-bold w-3 text-center ${statusClass(r.status)}`}>
+                        {statusIcon(r.status)}
+                      </span>
+                      <span className="text-navy flex-1">
+                        {r.row.title}
+                        {r.row.year && <span className="text-warm-gray ml-1">({r.row.year})</span>}
+                      </span>
+                      {r.message && (
+                        <span className="text-warm-gray text-[0.75rem] italic">{r.message}</span>
+                      )}
+                    </div>
+                    {r.warning && (
+                      <div className="pl-6 text-warm-gray text-[0.72rem] italic">⚠ {r.warning}</div>
+                    )}
+
+                    {/* Collection expansion UI */}
+                    {r.status === 'collection' && expand && (
+                      <div className="pl-6 mt-1 border-l-2 border-powder-blue ml-3">
+                        {expand.loading && (
+                          <p className="text-warm-gray text-[0.75rem] italic my-1">Looking up collection…</p>
+                        )}
+
+                        {!expand.loading && expand.parts.length === 0 && !expand.notFound && expand.collectionType === 'tmdb' && (
+                          <div className="flex gap-2 my-1">
+                            <button
+                              onClick={() => handleExpandTMDB(r.key, r.row.title)}
+                              className="bg-powder-blue text-navy border-none px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem]"
+                            >
+                              Look up on TMDB
+                            </button>
+                            <button
+                              onClick={() => handleKeepAsIs(r.key)}
+                              className="bg-white text-warm-gray border border-warm-gray px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem]"
+                            >
+                              Keep as single entry
+                            </button>
+                          </div>
+                        )}
+
+                        {!expand.loading && expand.notFound && (
+                          <div className="my-1">
+                            <p className="text-warm-gray text-[0.75rem] italic mb-1">No collection found on TMDB.</p>
+                            <button
+                              onClick={() => handleKeepAsIs(r.key)}
+                              className="bg-white text-warm-gray border border-warm-gray px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem]"
+                            >
+                              Keep as single entry
+                            </button>
+                          </div>
+                        )}
+
+                        {!expand.loading && expand.parts.length > 0 && (
+                          <div className="my-1">
+                            <ul className="list-none m-0 p-0 mb-2">
+                              {expand.parts.map((part) => (
+                                <li key={part.id} className="text-navy text-[0.75rem] py-0.5">
+                                  {part.title}
+                                  {part.release_date && (
+                                    <span className="text-warm-gray ml-1">({part.release_date.split('-')[0]})</span>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                            <label className="flex items-center gap-2 cursor-pointer mb-2 text-[0.75rem] text-navy">
+                              <input
+                                type="checkbox"
+                                checked={expand.useAsLabel}
+                                onChange={() => toggleUseAsLabel(r.key)}
+                                className="cursor-pointer"
+                              />
+                              Use &ldquo;{r.collectionLabel}&rdquo; as a label for all films
+                            </label>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleConfirmExpansion(r.key)}
+                                className="bg-powder-blue text-navy border-none px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem] font-bold"
+                              >
+                                Expand into {expand.parts.length} films
+                              </button>
+                              <button
+                                onClick={() => handleKeepAsIs(r.key)}
+                                className="bg-white text-warm-gray border border-warm-gray px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.75rem]"
+                              >
+                                Keep as single entry
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                  {r.warning && (
-                    <div className="pl-6 text-warm-gray text-[0.72rem] italic">⚠ {r.warning}</div>
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -533,7 +719,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
           >
             {summary ? 'Close' : 'Cancel'}
           </button>
-          {isParsed && !summary && currentDuplicateIndex === null && (
+          {isParsed && !summary && currentDuplicateIndex === null && !hasUnresolvedCollections && (
             <button
               onClick={handleStartImport}
               disabled={isImporting}
@@ -541,6 +727,11 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
             >
               {isImporting ? 'Importing...' : 'Import'}
             </button>
+          )}
+          {isParsed && !summary && !isImporting && hasUnresolvedCollections && (
+            <span className="text-warm-gray text-[0.8rem] italic self-center">
+              Resolve {collectionCount} collection{collectionCount !== 1 ? 's' : ''} above to continue
+            </span>
           )}
         </div>
       </div>
