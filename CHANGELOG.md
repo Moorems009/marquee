@@ -12,6 +12,17 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.53.0] - 2026-03-09
+
+### feat
+- Add barcode scanning to the Add Movie form via a "Scan" button
+- `BarcodeScannerModal` uses `@zxing/browser` for cross-browser camera-based UPC/EAN scanning with a targeting overlay; prefers rear camera on mobile
+- New `/api/barcode` server route: checks `barcode_cache` first, then calls UPCitemdb for the disc title, then searches TMDB for full metadata (poster, director, MPAA rating, genre); caches the result so each disc is only looked up once
+- On successful scan, all form fields (title, year, director, poster, rating, genre) are pre-filled automatically — same experience as TMDB autocomplete
+
+---
+
+
 ## [0.52.0] - 2026-03-09
 
 ### feat

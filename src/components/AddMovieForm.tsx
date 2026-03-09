@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { searchMovies, getMovieCredits, getMovieRating, getMovieGenre, getPosterUrl } from '@/lib/tmdb'
 import { TMDBResult, Movie } from '@/lib/types'
 import { inputStyle, sectionHeadingStyle } from '@/lib/styles'
+import BarcodeScannerModal, { type BarcodeResult } from './BarcodeScannerModal'
 
 type Props = {
   movies: Movie[]
@@ -25,6 +26,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
   const [tmdbResults, setTmdbResults] = useState<TMDBResult[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [pendingConfirm, setPendingConfirm] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function handleTitleChange(value: string) {
@@ -61,6 +63,17 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
     if (directorName) setDirector(directorName)
     if (mpaa_rating) setMpaaRating(mpaa_rating)
     if (genreValue) setGenre(genreValue)
+  }
+
+  function handleBarcodeScan(result: BarcodeResult) {
+    setShowScanner(false)
+    setTitle(result.title)
+    setYear(result.year ? String(result.year) : '')
+    if (result.poster_url) setPosterUrl(result.poster_url)
+    if (result.director) setDirector(result.director)
+    if (result.mpaa_rating) setMpaaRating(result.mpaa_rating)
+    if (result.genre) setGenre(result.genre)
+    setPendingConfirm(false)
   }
 
   const duplicateMovie = title && year
@@ -108,7 +121,28 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
 
   return (
     <div className="bg-white border border-powder-blue rounded p-6 mb-8">
-      <h2 className={sectionHeadingStyle}>Add to your shelf</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className={`${sectionHeadingStyle} mb-0`}>Add to your shelf</h2>
+        <button
+          type="button"
+          onClick={() => setShowScanner(true)}
+          className="bg-transparent border border-powder-blue text-navy px-3 py-1 cursor-pointer font-serif rounded-sm text-[0.8rem] flex items-center gap-1.5 hover:bg-powder-blue transition-colors"
+          title="Scan barcode"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/>
+            <line x1="8" y1="5.5" x2="16" y2="5.5"/><line x1="5.5" y1="8" x2="5.5" y2="16"/><line x1="18.5" y1="8" x2="18.5" y2="16"/>
+            <line x1="8" y1="18.5" x2="16" y2="18.5"/><line x1="16" y1="13" x2="21" y2="13"/><line x1="13" y1="16" x2="13" y2="21"/>
+          </svg>
+          Scan
+        </button>
+      </div>
+      {showScanner && (
+        <BarcodeScannerModal
+          onScan={handleBarcodeScan}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
       <form onSubmit={handleSubmit}>
 
         {/* Row 1: Title | Director | Year */}
