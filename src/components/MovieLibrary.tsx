@@ -102,18 +102,16 @@ export default function MovieLibrary() {
       const user = authData.user
       const { data: newLabel } = await createLabel(newLabelName.trim(), user?.id || '')
       if (newLabel) {
-        await addLabelToMovie(editMovie.id, newLabel.id)
+        await addLabelToMovie(editMovie.id, { id: newLabel.id, name: newLabel.name })
       }
     }
 
-    await fetchMovieLabels()
     closeEdit()
   }
 
   async function handleDelete() {
     if (!editMovie) return
     await deleteMovie(editMovie.id)
-    await fetchMovieLabels()
     closeEdit()
   }
 
@@ -247,7 +245,7 @@ export default function MovieLibrary() {
             onDelete={handleDelete}
             onToggleNowPlaying={handleToggleNowPlaying}
             onSelectExistingLabel={async (label) => {
-              await addLabelToMovie(editMovie.id, label.id)
+              await addLabelToMovie(editMovie.id, label)
               setEditMovieLabels([...editMovieLabels, label])
             }}
             onRemoveLabel={async (label) => {

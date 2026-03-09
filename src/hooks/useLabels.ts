@@ -29,7 +29,7 @@ export function useLabels() {
       supabase.from('labels').select('id, name').eq('user_id', user?.id)
     ])
 
-    if (!mlError && !lError && mlData && lData) {
+    if (!mlError && !lError && mlData && lData && mlData.length > 0) {
       const labelById: Record<string, Label> = {}
       lData.forEach((l: Label) => { labelById[l.id] = l })
 
@@ -56,12 +56,18 @@ export function useLabels() {
     return { data, error }
   }
 
-  async function addLabelToMovie(movieId: string, labelId: string) {
+  async function addLabelToMovie(movieId: string, label: Label) {
     const { error } = await supabase
       .from('movie_labels')
-      .insert([{ movie_id: movieId, label_id: labelId }])
+      .insert([{ movie_id: movieId, label_id: label.id }])
 
-    if (!error) await fetchMovieLabels()
+    if (!error) {
+      setMovieLabels(prev => {
+        const current = prev[movieId] || []
+        if (current.some(l => l.id === label.id)) return prev
+        return { ...prev, [movieId]: [...current, label] }
+      })
+    }
     return { error }
   }
 
@@ -72,7 +78,12 @@ export function useLabels() {
       .eq('movie_id', movieId)
       .eq('label_id', labelId)
 
-    if (!error) await fetchMovieLabels()
+    if (!error) {
+      setMovieLabels(prev => ({
+        ...prev,
+        [movieId]: (prev[movieId] || []).filter(l => l.id !== labelId)
+      }))
+    }
     return { error }
   }
 

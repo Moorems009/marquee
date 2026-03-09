@@ -12,6 +12,18 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.28.0] - 2026-03-08
+
+### fix
+- Fix label filter returning no results — root cause: missing SELECT RLS policy on `movie_labels` causes `fetchMovieLabels` to return 0 rows and reset `movieLabels` to `{}` after every operation
+- Switch `addLabelToMovie` and `removeLabelFromMovie` to optimistic state updates: `movieLabels` is updated directly in memory on INSERT/DELETE, no longer dependent on a successful SELECT round-trip
+- Remove `fetchMovieLabels()` calls from `handleSave` and `handleDelete`
+- `fetchMovieLabels` now only writes state when `mlData.length > 0`, preventing an empty SELECT from wiping valid in-memory label state
+- `addLabelToMovie` signature changed from `(movieId, labelId: string)` to `(movieId, label: Label)`
+
+---
+
+
 ## [0.27.0] - 2026-03-08
 
 ### fix
