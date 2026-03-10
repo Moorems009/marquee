@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.62.0] - 2026-03-10
+
+### fix
+- `useMovies`: delete associated `movie_labels` rows before deleting a media item, preventing silent FK constraint failures for items with labels assigned
+
+---
+
+
 ## [0.61.0] - 2026-03-10
 
 ### feat

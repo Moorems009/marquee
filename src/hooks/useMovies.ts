@@ -34,6 +34,7 @@ export function useMovies() {
   }
 
   async function deleteMovie(id: string) {
+    await supabase.from('movie_labels').delete().eq('item_id', id)
     const { error } = await supabase.from('media_items').delete().eq('id', id)
     if (!error) await fetchMovies()
     return { error }
