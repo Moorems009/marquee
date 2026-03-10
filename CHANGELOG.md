@@ -12,6 +12,16 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.61.0] - 2026-03-10
+
+### feat
+- `ImportCSVModal`: improved help text throughout
+  - Step 1: structured column reference covering all supported columns (Title/TV, Director, Year, Format, Imprint, Labels, Region, Season, Type); TV and collection tips shown inline
+  - Collections panel: added explanation of Expand vs Keep and the slash-separated manual film list format
+
+---
+
+
 ## [0.60.0] - 2026-03-10
 
 ### feat

@@ -677,11 +677,21 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         {/* Step 1: File upload */}
         {!isParsed && (
           <div>
-            <p className="text-warm-gray text-sm mb-4">
-              Upload a CSV with a <strong>Title</strong> column. Optional columns: Director, Year, Format, Imprint, Labels.
-              Labels separated by semicolons (e.g. <em>Horror;Criterion</em>).
-              Valid formats: <strong>4K, Blu-ray, DVD, VHS, Digital</strong>.
-            </p>
+            <div className="mb-4 text-[0.8rem] text-warm-gray flex flex-col gap-1.5">
+              <div>
+                <span className="uppercase tracking-wider text-xs text-dusty-rose font-semibold mr-2">Required</span>
+                <strong>Title</strong> — or use a column named <strong>TV</strong> for TV shows
+              </div>
+              <div>
+                <span className="uppercase tracking-wider text-xs text-warm-gray font-semibold mr-2">Optional</span>
+                Director, Year, Format, Imprint, Labels, Region, Season, Type
+              </div>
+              <div className="text-[0.75rem] italic mt-0.5">
+                Labels semicolon-separated (e.g. <em>Horror;Criterion</em>). Formats: 4K · Blu-ray · DVD · VHS · Digital.
+                For TV: set <strong className="not-italic">Type = TV</strong> — season auto-extracted from titles like <em>Andor Season 1</em>.
+                For collections: titles with <em>collection / trilogy / saga / series</em> are auto-detected, or list films as <em>Film A / Film B / Film C</em>.
+              </div>
+            </div>
             <div className="mb-4">
               <label className="block text-warm-gray text-xs uppercase tracking-wider mb-1">
                 Fallback format (for rows with no format)
@@ -702,9 +712,14 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         {/* Global collection resolution panel — shown until Apply is clicked */}
         {isParsed && pendingCollectionCount > 0 && !summary && (
           <div className="bg-white border border-powder-blue rounded p-4 mb-4">
-            <div className="text-[0.8rem] font-bold text-navy mb-3">
+            <div className="text-[0.8rem] font-bold text-navy mb-1">
               {pendingCollectionCount} collection{pendingCollectionCount !== 1 ? 's' : ''} detected
             </div>
+            <p className="text-warm-gray text-[0.75rem] mt-0 mb-3">
+              <strong className="font-semibold text-navy">Expand</strong> searches TMDB for the individual films so you can review them before importing.
+              <strong className="font-semibold text-navy"> Keep</strong> imports each collection as a single shelf entry.
+              To define films manually in your CSV, use <em>Film A / Film B / Film C</em> as the title — these expand immediately without a TMDB lookup.
+            </p>
             <div className="flex flex-col gap-2 mb-3">
               <label className="flex items-center gap-2 cursor-pointer text-sm text-navy">
                 <input type="radio" name="collectionRes" checked={collectionResolution === 'expand'} onChange={() => setCollectionResolution('expand')} className="cursor-pointer" />
