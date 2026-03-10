@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.63.0] - 2026-03-10
+
+### feat
+- `MovieList`: title sort ignores leading articles (The, A, An) — e.g. "The Batman" sorts under B
+
+---
+
+
 ## [0.62.0] - 2026-03-10
 
 ### fix

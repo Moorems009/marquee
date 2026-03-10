@@ -89,10 +89,12 @@ export default function MovieList({
     return true
   })
 
+  const sortTitle = (t: string) => t.replace(/^(the|a|an)\s+/i, '')
+
   const sortedMovies = [...filteredMovies].sort((a, b) => {
     switch (sortBy) {
-      case 'title-asc':  return a.title.localeCompare(b.title)
-      case 'title-desc': return b.title.localeCompare(a.title)
+      case 'title-asc':  return sortTitle(a.title).localeCompare(sortTitle(b.title))
+      case 'title-desc': return sortTitle(b.title).localeCompare(sortTitle(a.title))
       case 'year-desc':  return (b.year || 0) - (a.year || 0)
       case 'year-asc':   return (a.year || 0) - (b.year || 0)
       case 'director': {
