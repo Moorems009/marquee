@@ -12,6 +12,14 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.60.0] - 2026-03-10
+
+### feat
+- `MovieList`: added Region filter to the filter bar; dynamically populated from regions present in the library; counts toward active filter badge; cleared by "Clear filters"
+
+---
+
+
 ## [0.59.0] - 2026-03-10
 
 ### feat

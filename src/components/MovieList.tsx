@@ -37,6 +37,7 @@ export default function MovieList({
   const [filterFormat, setFilterFormat] = useState('')
   const [filterLabel, setFilterLabel] = useState('')
   const [filterGenre, setFilterGenre] = useState('')
+  const [filterRegion, setFilterRegion] = useState('')
   const [filterRating, setFilterRating] = useState('')
   const [ratingMode, setRatingMode] = useState<'exact' | 'lower'>('exact')
   const [includeNR, setIncludeNR] = useState(true)
@@ -45,11 +46,13 @@ export default function MovieList({
   const RATING_ORDER = ['G', 'PG', 'PG-13', 'R', 'NC-17']
   const [showFilters, setShowFilters] = useState(false)
 
-  const activeFilterCount = [search.trim(), filterType, filterFormat, filterLabel, filterGenre, filterRating].filter(Boolean).length + (!includeNR ? 1 : 0)
+  const activeFilterCount = [search.trim(), filterType, filterFormat, filterLabel, filterGenre, filterRegion, filterRating].filter(Boolean).length + (!includeNR ? 1 : 0)
 
   const allGenres = [...new Set(
     movies.flatMap(m => m.genre ? m.genre.split(',').map(g => g.trim()) : [])
   )].sort()
+
+  const allRegions = [...new Set(movies.map(m => m.region).filter(Boolean) as string[])].sort()
 
   const filteredMovies = movies.filter((movie) => {
     if (search.trim()) {
@@ -67,6 +70,7 @@ export default function MovieList({
       const genres = movie.genre ? movie.genre.split(',').map(g => g.trim()) : []
       if (!genres.includes(filterGenre)) return false
     }
+    if (filterRegion && movie.region !== filterRegion) return false
     if (filterRating || !includeNR) {
       const rating = movie.mpaa_rating?.trim() || ''
       const isNR = !rating || rating.toUpperCase() === 'NR'
@@ -202,6 +206,12 @@ export default function MovieList({
                 {allGenres.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             )}
+            {allRegions.length > 0 && (
+              <select value={filterRegion} onChange={(e) => setFilterRegion(e.target.value)} className={selectClass}>
+                <option value="">All regions</option>
+                {allRegions.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            )}
             <select value={filterRating} onChange={(e) => { setFilterRating(e.target.value); if (e.target.value === 'G') setRatingMode('exact') }} className={selectClass}>
               <option value="">All ratings</option>
               {RATING_ORDER.map(r => <option key={r} value={r}>{r}</option>)}
@@ -250,7 +260,7 @@ export default function MovieList({
             </div>
             {activeFilterCount > 0 && (
               <button
-                onClick={() => { setSearch(''); setFilterType(''); setFilterFormat(''); setFilterLabel(''); setFilterGenre(''); setFilterRating(''); setRatingMode('exact'); setIncludeNR(true) }}
+                onClick={() => { setSearch(''); setFilterType(''); setFilterFormat(''); setFilterLabel(''); setFilterGenre(''); setFilterRegion(''); setFilterRating(''); setRatingMode('exact'); setIncludeNR(true) }}
                 className="text-sm text-warm-gray bg-transparent border-none cursor-pointer font-serif underline whitespace-nowrap"
               >
                 Clear filters
