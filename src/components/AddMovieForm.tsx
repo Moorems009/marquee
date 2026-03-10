@@ -20,6 +20,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
   const [year, setYear] = useState('')
   const [format, setFormat] = useState('Blu-ray')
   const [imprint, setImprint] = useState('')
+  const [region, setRegion] = useState('')
   const [creator, setCreator] = useState('')
   const [posterUrl, setPosterUrl] = useState('')
   const [mpaaRating, setMpaaRating] = useState('')
@@ -44,7 +45,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
 
   function resetForm() {
     setTitle(''); setYear(''); setFormat('Blu-ray'); setImprint('')
-    setCreator(''); setPosterUrl(''); setMpaaRating(''); setGenre('')
+    setCreator(''); setPosterUrl(''); setMpaaRating(''); setGenre(''); setRegion('')
     setMessage(''); setPendingConfirm(false)
     setTmdbResults([]); setShowDropdown(false)
     setTvResults([]); setShowTvDropdown(false)
@@ -156,6 +157,7 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
       year: parseInt(year),
       format,
       imprint: imprint || null,
+      region: region || null,
       creator: creator || null,
       poster_url: posterUrl || null,
       mpaa_rating: mpaaRating || null,
@@ -301,8 +303,8 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
           />
         </div>
 
-        {/* Row 2: Format | Imprint | Add button */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_3fr_auto]">
+        {/* Row 2: Format | Region | Imprint | Add button */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_2fr_auto]">
           <select value={format} onChange={(e) => setFormat(e.target.value)} className={inputStyle}>
             <option>Blu-ray</option>
             <option>4K</option>
@@ -310,6 +312,13 @@ export default function AddMovieForm({ movies, onMovieAdded }: Props) {
             <option>VHS</option>
             <option>Digital</option>
           </select>
+          <input
+            type="text"
+            placeholder="Region (e.g. A, B, 1)"
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+            className={inputStyle}
+          />
           <input
             type="text"
             placeholder="Imprint (e.g. Criterion, Arrow)"

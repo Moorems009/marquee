@@ -12,6 +12,17 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.59.0] - 2026-03-10
+
+### feat
+- Added `region` field (nullable text) across the stack: `types.ts`, `AddMovieForm`, `EditMovieModal`, `ImportCSVModal`
+- `AddMovieForm`: Region input added between Format and Imprint in row 2
+- `EditMovieModal`: Region field added after Imprint
+- `ImportCSVModal`: `region` column recognized in CSV; stored on insert
+
+---
+
+
 ## [0.58.0] - 2026-03-09
 
 ### feat

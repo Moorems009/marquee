@@ -17,6 +17,7 @@ type CSVRow = {
   labels?: string
   type?: string    // 'movie' | 'tv_season' — defaults to 'movie'
   season?: string  // season number for tv_season rows
+  region?: string
 }
 
 export type CollectionPart = {
@@ -147,6 +148,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
         labels: row['labels'] || '',
         type: rawType,
         season,
+        region: row['region'] || '',
       }
     }).filter((r) => r.title.length > 0)
   }
@@ -440,6 +442,7 @@ export default function ImportCSVModal({ existingMovies, onClose, onImportComple
       year: r.year ? parseInt(r.year) : tmdbYear,
       format,
       imprint: r.imprint || null,
+      region: r.region || null,
       creator: creator || null,
       poster_url: posterUrl,
       mpaa_rating: mpaaRating,

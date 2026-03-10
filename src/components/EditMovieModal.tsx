@@ -264,6 +264,16 @@ export default function EditMovieModal({
               />
             </div>
             <div>
+              <label className={fieldLabelStyle}>Region</label>
+              <input
+                type="text"
+                placeholder="e.g. A, B, 1"
+                value={editData.region || ''}
+                onChange={(e) => setEditData({ ...editData, region: e.target.value || null })}
+                className={inputStyle}
+              />
+            </div>
+            <div>
               <label className={fieldLabelStyle}>MPAA Rating</label>
               <input
                 type="text"

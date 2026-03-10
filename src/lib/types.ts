@@ -11,6 +11,7 @@ export type MediaItem = {
   item_type: 'movie' | 'tv_season'
   show_title: string | null
   season_number: number | null
+  region: string | null
 }
 
 // Backward-compat alias — prefer MediaItem in new code
