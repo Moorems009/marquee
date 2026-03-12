@@ -20,6 +20,12 @@ export type Movie = MediaItem
 export type Label = {
   id: string
   name: string
+  is_section: boolean
+}
+
+export type LabelItem = {
+  itemId: string
+  position: number
 }
 
 export type TMDBResult = {

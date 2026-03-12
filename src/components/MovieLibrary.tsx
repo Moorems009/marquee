@@ -8,6 +8,7 @@ import { useLabels } from '@/hooks/useLabels'
 import { Movie, Label } from '@/lib/types'
 import MovieList from './MovieList'
 import EditMovieModal from './EditMovieModal'
+import ManageLabelModal from './ManageLabelModal'
 import ImportCSVModal from './ImportCSVModal'
 import SettingsModal from './SettingsModal'
 import NowPlayingMarquee from './NowPlayingMarquee'
@@ -17,7 +18,7 @@ export default function MovieLibrary() {
   const supabase = createClient()
   const router = useRouter()
   const { movies, loading, fetchMovies, updateMovie, deleteMovie } = useMovies()
-  const { labels, movieLabels, fetchLabels, fetchMovieLabels, createLabel, addLabelToMovie, removeLabelFromMovie } = useLabels()
+  const { labels, movieLabels, labelItems, fetchLabels, fetchMovieLabels, createLabel, addLabelToMovie, removeLabelFromMovie, updateLabelItemPositions, updateLabelSection } = useLabels()
   const [userEmail, setUserEmail] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const [editMovie, setEditMovie] = useState<Movie | null>(null)
@@ -25,6 +26,7 @@ export default function MovieLibrary() {
   const [editMovieLabels, setEditMovieLabels] = useState<Label[]>([])
   const [showImportModal, setShowImportModal] = useState(false)
   const [showSettingsMenu, setShowSettingsMenu] = useState(false)
+  const [manageLabelId, setManageLabelId] = useState<string | null>(null)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [nightMode, setNightMode] = useState(false)
   const [showWelcome, setShowWelcome] = useState(false)
@@ -111,7 +113,7 @@ export default function MovieLibrary() {
       const user = authData.user
       const { data: newLabel } = await createLabel(newLabelName.trim(), user?.id || '')
       if (newLabel) {
-        await addLabelToMovie(editMovie.id, { id: newLabel.id, name: newLabel.name })
+        await addLabelToMovie(editMovie.id, { id: newLabel.id, name: newLabel.name, is_section: false })
       }
     }
 
@@ -214,9 +216,11 @@ export default function MovieLibrary() {
           loading={loading}
           viewMode={viewMode}
           movieLabels={movieLabels}
+          labelItems={labelItems}
           onEdit={openEdit}
           onViewModeChange={handleViewModeChange}
           onShuffle={handleShuffle}
+          onManageLabel={(id) => setManageLabelId(id)}
           onMovieAdded={async (newId: string) => {
             await fetchMovies()
             if (nowPlayingIds.length < 3) {
@@ -281,6 +285,27 @@ export default function MovieLibrary() {
           />
         </ErrorBoundary>
       )}
+      {manageLabelId && (() => {
+        const label = labels.find(l => l.id === manageLabelId)
+        if (!label) return null
+        const entries = labelItems[manageLabelId] || []
+        const orderedMovies = entries
+          .map(e => movies.find(m => m.id === e.itemId))
+          .filter((m): m is Movie => !!m)
+        return (
+          <ErrorBoundary onReset={() => setManageLabelId(null)}>
+            <ManageLabelModal
+              label={label}
+              orderedMovies={orderedMovies}
+              onClose={() => setManageLabelId(null)}
+              onSave={async (positions, isSection) => {
+                await updateLabelItemPositions(manageLabelId, positions)
+                await updateLabelSection(manageLabelId, isSection)
+              }}
+            />
+          </ErrorBoundary>
+        )
+      })()}
     </div>
     </div>
   )

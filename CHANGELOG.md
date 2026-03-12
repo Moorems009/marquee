@@ -12,6 +12,21 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 ---
 
 
+## [0.64.0] - 2026-03-12
+
+### feat
+- `useLabels`: added `labelItems` state (label_id → items sorted by position); `fetchMovieLabels` now fetches `position` and `created_at` and builds both `movieLabels` (item→labels by first-assigned) and `labelItems` (label→items by position, unordered items last); added `updateLabelItemPositions` and `updateLabelSection` mutations; `addLabelToMovie`/`removeLabelFromMovie` keep both maps in sync
+- `types.ts`: added `is_section: boolean` to `Label`; added `LabelItem` type `{ itemId: string, position: number }`
+- `ManageLabelModal` (new): drag-to-reorder list for label items using HTML5 drag events; section toggle (mint = on, powder-blue = off) to control inline vs separate-section rendering; normalizes positions to 1-based on save
+- `MovieList`: full label ordering support — inline groups anchor at label name alphabetically (title sort) or shared director last name (director sort); groups dissolve under year sort; section labels always render as named blocks below the main list with items in label order; label filter dropdown only shows labels with at least one item assigned; "Edit order" button appears when a label filter is active; added `Director Z→A` sort option; removed Format A→Z, Genre A→Z, Rating A→Z sort options
+- `MovieLibrary`: wires `manageLabelId` state, `labelItems`, `updateLabelItemPositions`, `updateLabelSection` to `MovieList` and `ManageLabelModal`
+
+### fix
+- `MovieList`: `SortKey` renamed `'director'` → `'director-asc'`/`'director-desc'`; all three switch cases (`compareMovies`, `shouldGroup`, `getAnchorKey`) updated to match
+
+---
+
+
 ## [0.63.0] - 2026-03-10
 
 ### feat
